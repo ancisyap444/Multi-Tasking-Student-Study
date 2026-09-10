@@ -1,0 +1,432 @@
+import { StudentProfile, Subject, CalendarEvent, TaskItem, ProjectItem, DocumentItem } from '@/types/database.types';
+import { addDays, setHours, setMinutes, startOfWeek } from 'date-fns';
+
+export const mockProfile: StudentProfile = {
+  id: 'demo-student-uuid',
+  full_name: 'Alex River',
+  program: 'BS Computer Science',
+  year: 'Sophomore',
+  avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+  target_study_hours_week: 25,
+};
+
+export const mockSubjects: Subject[] = [
+  {
+    id: 'sub-cs101',
+    user_id: 'demo-student-uuid',
+    name: 'Data Structures & Algorithms',
+    code: 'CS 101',
+    color: 'mint',
+    instructor: 'Dr. Evelyn Vance',
+    location: 'Turing Hall 302',
+    meeting_schedule: [
+      { day: 'MON', start: '10:00', end: '11:30' },
+      { day: 'WED', start: '10:00', end: '11:30' },
+      { day: 'FRI', start: '10:00', end: '11:30' },
+    ],
+  },
+  {
+    id: 'sub-math201',
+    user_id: 'demo-student-uuid',
+    name: 'Linear Algebra & Matrices',
+    code: 'MATH 201',
+    color: 'lavender',
+    instructor: 'Prof. David Chen',
+    location: 'Euler Hall 104',
+    meeting_schedule: [
+      { day: 'TUE', start: '13:00', end: '14:30' },
+      { day: 'THU', start: '13:00', end: '14:30' },
+    ],
+  },
+  {
+    id: 'sub-phys150',
+    user_id: 'demo-student-uuid',
+    name: 'University Physics: Mechanics',
+    code: 'PHYS 150',
+    color: 'amber',
+    instructor: 'Dr. Sarah Thorne',
+    location: 'Feynman Lab 12',
+    meeting_schedule: [
+      { day: 'MON', start: '14:00', end: '15:30' },
+      { day: 'WED', start: '14:00', end: '15:30' },
+    ],
+  },
+  {
+    id: 'sub-des210',
+    user_id: 'demo-student-uuid',
+    name: 'Human-Computer Interaction',
+    code: 'DES 210',
+    color: 'sky',
+    instructor: 'Elena Rostova',
+    location: 'Design Studio 4B',
+    meeting_schedule: [
+      { day: 'TUE', start: '10:00', end: '11:30' },
+      { day: 'THU', start: '10:00', end: '11:30' },
+    ],
+  },
+  {
+    id: 'sub-stat310',
+    user_id: 'demo-student-uuid',
+    name: 'Applied Probability & Stats',
+    code: 'STAT 310',
+    color: 'rose',
+    instructor: 'Prof. Marcus Brody',
+    location: 'Gauss Auditorium',
+    meeting_schedule: [
+      { day: 'FRI', start: '14:00', end: '16:00' },
+    ],
+  },
+];
+
+// Helper to generate events for the current week dynamically
+export function generateMockEvents(subjects: Subject[]): CalendarEvent[] {
+  const today = new Date();
+  const weekStart = startOfWeek(today, { weekStartsOn: 1 }); // Monday start
+
+  const events: CalendarEvent[] = [
+    // Mon: CS 101 Lecture
+    {
+      id: 'evt-1',
+      user_id: 'demo-student-uuid',
+      subject_id: 'sub-cs101',
+      title: 'CS 101: Binary Search Trees',
+      type: 'class',
+      start_time: setMinutes(setHours(addDays(weekStart, 0), 10), 0).toISOString(),
+      end_time: setMinutes(setHours(addDays(weekStart, 0), 11), 30).toISOString(),
+      location: 'Turing Hall 302',
+      is_recurring: true,
+    },
+    // Mon: Auto-placed Study block for CS 101
+    {
+      id: 'evt-2',
+      user_id: 'demo-student-uuid',
+      subject_id: 'sub-cs101',
+      title: 'Focus Study: Red-Black Trees',
+      type: 'study',
+      start_time: setMinutes(setHours(addDays(weekStart, 0), 12), 0).toISOString(),
+      end_time: setMinutes(setHours(addDays(weekStart, 0), 13), 30).toISOString(),
+      location: 'Campus Library 2F',
+      notes: 'Auto-placed for CS 101 Assignment deadline',
+    },
+    // Mon: PHYS 150 Lecture
+    {
+      id: 'evt-3',
+      user_id: 'demo-student-uuid',
+      subject_id: 'sub-phys150',
+      title: 'PHYS 150: Rotational Dynamics',
+      type: 'class',
+      start_time: setMinutes(setHours(addDays(weekStart, 0), 14), 0).toISOString(),
+      end_time: setMinutes(setHours(addDays(weekStart, 0), 15), 30).toISOString(),
+      location: 'Feynman Lab 12',
+      is_recurring: true,
+    },
+    // Tue: DES 210
+    {
+      id: 'evt-4',
+      user_id: 'demo-student-uuid',
+      subject_id: 'sub-des210',
+      title: 'DES 210: Heuristic Evaluation',
+      type: 'class',
+      start_time: setMinutes(setHours(addDays(weekStart, 1), 10), 0).toISOString(),
+      end_time: setMinutes(setHours(addDays(weekStart, 1), 11), 30).toISOString(),
+      location: 'Design Studio 4B',
+      is_recurring: true,
+    },
+    // Tue: MATH 201
+    {
+      id: 'evt-5',
+      user_id: 'demo-student-uuid',
+      subject_id: 'sub-math201',
+      title: 'MATH 201: Eigenvectors & Values',
+      type: 'class',
+      start_time: setMinutes(setHours(addDays(weekStart, 1), 13), 0).toISOString(),
+      end_time: setMinutes(setHours(addDays(weekStart, 1), 14), 30).toISOString(),
+      location: 'Euler Hall 104',
+      is_recurring: true,
+    },
+    // Tue: Study Block: Math Problem Set
+    {
+      id: 'evt-6',
+      user_id: 'demo-student-uuid',
+      subject_id: 'sub-math201',
+      title: 'Study Session: Eigenvalues Practice',
+      type: 'study',
+      start_time: setMinutes(setHours(addDays(weekStart, 1), 16), 0).toISOString(),
+      end_time: setMinutes(setHours(addDays(weekStart, 1), 17), 30).toISOString(),
+      location: 'Quiet Study Hall',
+    },
+    // Wed: CS 101 Lecture
+    {
+      id: 'evt-7',
+      user_id: 'demo-student-uuid',
+      subject_id: 'sub-cs101',
+      title: 'CS 101: Graph Traversals (BFS/DFS)',
+      type: 'class',
+      start_time: setMinutes(setHours(addDays(weekStart, 2), 10), 0).toISOString(),
+      end_time: setMinutes(setHours(addDays(weekStart, 2), 11), 30).toISOString(),
+      location: 'Turing Hall 302',
+      is_recurring: true,
+    },
+    // Wed: Project Meeting
+    {
+      id: 'evt-8',
+      user_id: 'demo-student-uuid',
+      subject_id: 'sub-des210',
+      title: 'HCI Capstone Sprint Sync',
+      type: 'project',
+      start_time: setMinutes(setHours(addDays(weekStart, 2), 12), 30).toISOString(),
+      end_time: setMinutes(setHours(addDays(weekStart, 2), 13), 45).toISOString(),
+      location: 'Google Meet',
+    },
+    // Wed: PHYS 150 Lab
+    {
+      id: 'evt-9',
+      user_id: 'demo-student-uuid',
+      subject_id: 'sub-phys150',
+      title: 'PHYS 150: Mechanics Lab Experiment 4',
+      type: 'class',
+      start_time: setMinutes(setHours(addDays(weekStart, 2), 14), 0).toISOString(),
+      end_time: setMinutes(setHours(addDays(weekStart, 2), 15), 30).toISOString(),
+      location: 'Feynman Lab 12',
+    },
+    // Thu: DES 210
+    {
+      id: 'evt-10',
+      user_id: 'demo-student-uuid',
+      subject_id: 'sub-des210',
+      title: 'DES 210: User Testing Workshop',
+      type: 'class',
+      start_time: setMinutes(setHours(addDays(weekStart, 3), 10), 0).toISOString(),
+      end_time: setMinutes(setHours(addDays(weekStart, 3), 11), 30).toISOString(),
+      location: 'Design Studio 4B',
+    },
+    // Thu: MATH 201
+    {
+      id: 'evt-11',
+      user_id: 'demo-student-uuid',
+      subject_id: 'sub-math201',
+      title: 'MATH 201: Matrix Decomposition',
+      type: 'class',
+      start_time: setMinutes(setHours(addDays(weekStart, 3), 13), 0).toISOString(),
+      end_time: setMinutes(setHours(addDays(weekStart, 3), 14), 30).toISOString(),
+      location: 'Euler Hall 104',
+    },
+    // Thu: Midterm Exam Alert
+    {
+      id: 'evt-12',
+      user_id: 'demo-student-uuid',
+      subject_id: 'sub-cs101',
+      title: 'CS 101 Midterm Examination',
+      type: 'exam',
+      start_time: setMinutes(setHours(addDays(weekStart, 3), 15), 30).toISOString(),
+      end_time: setMinutes(setHours(addDays(weekStart, 3), 17), 30).toISOString(),
+      location: 'Auditorium A',
+    },
+    // Fri: CS 101
+    {
+      id: 'evt-13',
+      user_id: 'demo-student-uuid',
+      subject_id: 'sub-cs101',
+      title: 'CS 101: Dijkstra & Shortest Path',
+      type: 'class',
+      start_time: setMinutes(setHours(addDays(weekStart, 4), 10), 0).toISOString(),
+      end_time: setMinutes(setHours(addDays(weekStart, 4), 11), 30).toISOString(),
+      location: 'Turing Hall 302',
+    },
+    // Fri: STAT 310
+    {
+      id: 'evt-14',
+      user_id: 'demo-student-uuid',
+      subject_id: 'sub-stat310',
+      title: 'STAT 310: Continuous Random Variables',
+      type: 'class',
+      start_time: setMinutes(setHours(addDays(weekStart, 4), 14), 0).toISOString(),
+      end_time: setMinutes(setHours(addDays(weekStart, 4), 16), 0).toISOString(),
+      location: 'Gauss Auditorium',
+    },
+  ];
+
+  return events.map((e) => ({
+    ...e,
+    subject: subjects.find((s) => s.id === e.subject_id),
+  }));
+}
+
+export const mockTasks: TaskItem[] = [
+  {
+    id: 'tsk-1',
+    user_id: 'demo-student-uuid',
+    subject_id: 'sub-cs101',
+    title: 'Implement Red-Black Tree Balancing & Tests',
+    notes: 'Include rotation test cases and edge cases for 3-node deletions.',
+    due_at: addDays(new Date(), 1).toISOString(),
+    priority: 'urgent',
+    status: 'in_progress',
+    task_type: 'homework',
+    estimated_hours: 3.5,
+    subtasks: [
+      { id: 'st-1', title: 'Left & right node rotations', completed: true },
+      { id: 'st-2', title: 'Double red violation fixes', completed: true },
+      { id: 'st-3', title: 'Black height verification suite', completed: false },
+    ],
+  },
+  {
+    id: 'tsk-2',
+    user_id: 'demo-student-uuid',
+    subject_id: 'sub-math201',
+    title: 'Eigenvalues & Diagonalization Problem Set 5',
+    notes: 'Problems 14 through 28 from Hoffman & Kunze Chapter 6.',
+    due_at: addDays(new Date(), 2).toISOString(),
+    priority: 'high',
+    status: 'todo',
+    task_type: 'homework',
+    estimated_hours: 2.0,
+    subtasks: [
+      { id: 'st-4', title: 'Compute characteristic polynomial', completed: false },
+      { id: 'st-5', title: 'Gram-Schmidt orthogonalization step', completed: false },
+    ],
+  },
+  {
+    id: 'tsk-3',
+    user_id: 'demo-student-uuid',
+    subject_id: 'sub-phys150',
+    title: 'Friction & Harmonic Oscillations Lab Report',
+    notes: 'Include raw error margin plots generated in Python/Matplotlib.',
+    due_at: addDays(new Date(), 0).toISOString(),
+    priority: 'urgent',
+    status: 'todo',
+    task_type: 'lab',
+    estimated_hours: 2.5,
+    subtasks: [
+      { id: 'st-6', title: 'Tabulate experimental damper data', completed: true },
+      { id: 'st-7', title: 'Write discussion of systematic error', completed: false },
+    ],
+  },
+  {
+    id: 'tsk-4',
+    user_id: 'demo-student-uuid',
+    subject_id: 'sub-des210',
+    title: 'Figma High-Fi Prototype: Patient Health Portal',
+    notes: 'Implement interactive modal states and dark-mode color tokens.',
+    due_at: addDays(new Date(), 4).toISOString(),
+    priority: 'high',
+    status: 'in_progress',
+    task_type: 'project',
+    estimated_hours: 5.0,
+    subtasks: [
+      { id: 'st-8', title: 'Appointment scheduling flow', completed: true },
+      { id: 'st-9', title: 'Lab test results timeline view', completed: false },
+    ],
+  },
+  {
+    id: 'tsk-5',
+    user_id: 'demo-student-uuid',
+    subject_id: 'sub-stat310',
+    title: 'Read Bertsekas Chapter 4: Joint Distributions',
+    notes: 'Focus on covariance and marginal density integrals.',
+    due_at: addDays(new Date(), 5).toISOString(),
+    priority: 'medium',
+    status: 'todo',
+    task_type: 'reading',
+    estimated_hours: 1.5,
+    subtasks: [],
+  },
+  {
+    id: 'tsk-6',
+    user_id: 'demo-student-uuid',
+    subject_id: 'sub-cs101',
+    title: 'CS 101 Midterm Cheat Sheet (2-Sided)',
+    notes: 'Big-O complexity summaries, Master theorem, traversal pseudocode.',
+    due_at: addDays(new Date(), 3).toISOString(),
+    priority: 'high',
+    status: 'done',
+    task_type: 'exam_prep',
+    estimated_hours: 3.0,
+    subtasks: [
+      { id: 'st-10', title: 'Trees & Heaps summary', completed: true },
+      { id: 'st-11', title: 'Graph algorithm complexities table', completed: true },
+    ],
+  },
+];
+
+export const mockProjects: ProjectItem[] = [
+  {
+    id: 'proj-1',
+    user_id: 'demo-student-uuid',
+    subject_id: 'sub-cs101',
+    title: 'Distributed Key-Value Store Engine',
+    description: 'A Raft-consensus replicated memory store with persistent WAL logging and REST API.',
+    progress: 68,
+    due_date: addDays(new Date(), 24).toISOString(),
+    team_members: ['Alex River', 'Liam Chen', 'Maya Patel'],
+    milestones: [
+      { id: 'm-1', title: 'Leader Election Protocol', due_date: addDays(new Date(), -5).toISOString(), completed: true },
+      { id: 'm-2', title: 'Log Replication & Heartbeats', due_date: addDays(new Date(), 3).toISOString(), completed: true },
+      { id: 'm-3', title: 'Client RPC & Failover Handling', due_date: addDays(new Date(), 14).toISOString(), completed: false },
+      { id: 'm-4', title: 'Benchmark & Stress Test Report', due_date: addDays(new Date(), 24).toISOString(), completed: false },
+    ],
+  },
+  {
+    id: 'proj-2',
+    user_id: 'demo-student-uuid',
+    subject_id: 'sub-des210',
+    title: 'StudySync: Collaborative Academic Planner',
+    description: 'Human-centered study session coordination tool designed for undergraduate study groups.',
+    progress: 45,
+    due_date: addDays(new Date(), 18).toISOString(),
+    team_members: ['Alex River', 'Sophia Rossi'],
+    milestones: [
+      { id: 'm-5', title: 'User Needfinding Interviews (8 participants)', due_date: addDays(new Date(), -8).toISOString(), completed: true },
+      { id: 'm-6', title: 'Medium-fidelity Wireframes', due_date: addDays(new Date(), 2).toISOString(), completed: true },
+      { id: 'm-7', title: 'Interactive Prototype in Figma', due_date: addDays(new Date(), 10).toISOString(), completed: false },
+      { id: 'm-8', title: 'Usability Evaluation Report', due_date: addDays(new Date(), 18).toISOString(), completed: false },
+    ],
+  },
+];
+
+export const mockDocuments: DocumentItem[] = [
+  {
+    id: 'doc-1',
+    user_id: 'demo-student-uuid',
+    subject_id: 'sub-cs101',
+    title: 'CS101_Fall_Syllabus_Grading_Policy.pdf',
+    file_path: 'syllabi/CS101_Fall_Syllabus.pdf',
+    file_size: 245000,
+    file_type: 'application/pdf',
+    category: 'syllabus',
+    created_at: addDays(new Date(), -30).toISOString(),
+  },
+  {
+    id: 'doc-2',
+    user_id: 'demo-student-uuid',
+    subject_id: 'sub-math201',
+    title: 'Linear_Algebra_Eigenvalues_Lecture_Slides.pdf',
+    file_path: 'slides/MATH201_Eigenvalues.pdf',
+    file_size: 1840000,
+    file_type: 'application/pdf',
+    category: 'slides',
+    created_at: addDays(new Date(), -4).toISOString(),
+  },
+  {
+    id: 'doc-3',
+    user_id: 'demo-student-uuid',
+    subject_id: 'sub-phys150',
+    title: 'PHYS150_Lab_Manual_Mechanics_2025.pdf',
+    file_path: 'notes/PHYS150_Lab_Manual.pdf',
+    file_size: 5120000,
+    file_type: 'application/pdf',
+    category: 'notes',
+    created_at: addDays(new Date(), -14).toISOString(),
+  },
+  {
+    id: 'doc-4',
+    user_id: 'demo-student-uuid',
+    subject_id: 'sub-stat310',
+    title: 'STAT310_Probability_Distributions_Cheatsheet.pdf',
+    file_path: 'cheatsheets/STAT310_Cheatsheet.pdf',
+    file_size: 890000,
+    file_type: 'application/pdf',
+    category: 'cheatsheet',
+    created_at: addDays(new Date(), -2).toISOString(),
+  },
+];
