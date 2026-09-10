@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Clock, CheckCircle2, ArrowRight, Check } from 'lucide-react';
 import { differenceInHours, parseISO, isPast } from 'date-fns';
 import { TaskItem } from '@/types/database.types';
+import { getDeadlineCountdown } from '@/utils/dateUtils';
 import { cn } from '@/lib/utils';
 
 interface TodayTasksListProps {
@@ -66,6 +67,7 @@ export const TodayTasksList: React.FC<TodayTasksListProps> = ({
         {urgentTasks.length > 0 ? (
           urgentTasks.map((task) => {
             const isOverdue = isPast(parseISO(task.due_at!));
+            const countdown = getDeadlineCountdown(task.due_at);
 
             return (
               <div
@@ -92,18 +94,18 @@ export const TodayTasksList: React.FC<TodayTasksListProps> = ({
                       </h4>
                     </div>
 
-                    <div className="mt-0.5 flex items-center gap-3 text-[11px] text-slate-500">
+                    <div className="mt-1 flex items-center gap-2 text-[11px] text-slate-500">
                       <span
                         className={cn(
-                          'flex items-center gap-1 font-medium',
-                          isOverdue ? 'text-rose-600 font-semibold' : ''
+                          'inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] font-semibold',
+                          countdown.badgeClass
                         )}
                       >
                         <Clock className="h-3 w-3" />
-                        {isOverdue ? 'Overdue' : 'Due soon'}
+                        {countdown.label}
                       </span>
                       {task.estimated_hours && (
-                        <span>~{task.estimated_hours}h required</span>
+                        <span className="text-[11px] text-slate-400">~{task.estimated_hours}h est.</span>
                       )}
                     </div>
                   </div>

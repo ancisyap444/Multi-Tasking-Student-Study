@@ -2,6 +2,7 @@ import React from 'react';
 import { Check, Clock, Trash2, Edit2, Sparkles } from 'lucide-react';
 import { format, parseISO, isPast } from 'date-fns';
 import { TaskItem, TaskPriority } from '@/types/database.types';
+import { getDeadlineCountdown } from '@/utils/dateUtils';
 import { cn } from '@/lib/utils';
 
 interface TaskListProps {
@@ -44,6 +45,7 @@ export const TaskList: React.FC<TaskListProps> = ({
             {tasks.map((task) => {
               const isDone = task.status === 'done';
               const isOverdue = task.due_at && isPast(parseISO(task.due_at)) && !isDone;
+              const countdown = getDeadlineCountdown(task.due_at);
 
               return (
                 <tr
@@ -106,14 +108,19 @@ export const TaskList: React.FC<TaskListProps> = ({
 
                   <td className="px-4 py-3">
                     {task.due_at ? (
-                      <div
-                        className={cn(
-                          'flex items-center gap-1.5',
-                          isOverdue ? 'text-rose-600 font-semibold' : 'text-slate-600 dark:text-slate-400'
-                        )}
-                      >
-                        <Clock className="h-3 w-3" />
-                        <span>{format(parseISO(task.due_at), 'MMM d, h:mm a')}</span>
+                      <div className="flex flex-col gap-1 items-start">
+                        <span
+                          className={cn(
+                            'inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] font-semibold',
+                            countdown.badgeClass
+                          )}
+                        >
+                          <Clock className="h-2.5 w-2.5" />
+                          {countdown.label}
+                        </span>
+                        <span className="text-[11px] text-slate-400">
+                          {format(parseISO(task.due_at), 'MMM d, h:mm a')}
+                        </span>
                       </div>
                     ) : (
                       <span className="text-slate-400">—</span>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Target, TrendingUp } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { cn } from '@/lib/utils';
 
 interface StudyLoadProgressBarProps {
   completedHours?: number;
@@ -54,15 +55,17 @@ export const StudyLoadProgressBar: React.FC<StudyLoadProgressBarProps> = ({
 
       <div className="mt-4 flex items-center justify-between rounded-xl bg-slate-50 p-3 text-xs text-slate-600 dark:bg-slate-900/40 dark:text-slate-400">
         <div className="flex items-center gap-1.5">
-          <TrendingUp className="h-4 w-4 text-emerald-500" />
+          <TrendingUp className={cn('h-4 w-4', goalAchieved ? 'text-emerald-500' : completedHours > 0 ? 'text-blue-500' : 'text-slate-400')} />
           <span>
             {goalAchieved
-              ? 'Weekly goal achieved!'
-              : 'Track study sessions via the calendar'}
+              ? 'Weekly target reached! Outstanding focus!'
+              : completedHours > 0
+              ? `${completedHours.toFixed(1)} hrs logged this week`
+              : 'Add study blocks in Calendar to track hours'}
           </span>
         </div>
-        <span className="text-[11px] text-slate-400">
-          {goalAchieved ? 'Great work!' : `${remaining.toFixed(1)} hrs left`}
+        <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+          {goalAchieved ? 'Goal met 🎉' : `${remaining.toFixed(1)} hrs left`}
         </span>
       </div>
     </div>

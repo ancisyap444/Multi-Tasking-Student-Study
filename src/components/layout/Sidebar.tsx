@@ -18,6 +18,12 @@ import { cn } from '@/lib/utils';
 
 export type NavTab = 'dashboard' | 'calendar' | 'tasks' | 'projects' | 'documents';
 
+export interface TaskUrgencyCounts {
+  total: number;
+  overdue: number;
+  dueToday: number;
+}
+
 interface SidebarProps {
   currentTab: NavTab;
   onSelectTab: (tab: NavTab) => void;
@@ -30,6 +36,7 @@ interface SidebarProps {
   collapsed: boolean;
   onToggleCollapsed: () => void;
   activeTaskCount?: number;
+  taskUrgency?: TaskUrgencyCounts;
 }
 
 const colorBadgeStyles: Record<SubjectColor, { dot: string; bg: string; text: string }> = {
@@ -52,13 +59,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
   collapsed,
   onToggleCollapsed,
   activeTaskCount = 0,
+  taskUrgency,
 }) => {
   const { profile } = useAuth();
+
+  const effectiveTaskCount = taskUrgency?.total ?? activeTaskCount;
 
   const navItems = [
     { id: 'dashboard' as NavTab, label: 'Dashboard', icon: LayoutDashboard },
     { id: 'calendar' as NavTab, label: 'Calendar', icon: CalendarIcon, badge: 'Active' },
-    { id: 'tasks' as NavTab, label: 'My Tasks', icon: CheckSquare, count: activeTaskCount || undefined },
+    {
+      id: 'tasks' as NavTab,
+      label: 'My Tasks',
+      icon: CheckSquare,
+      count: effectiveTaskCount || undefined,
+      urgency: taskUrgency,
+    },
     { id: 'projects' as NavTab, label: 'Projects', icon: FolderKanban },
     { id: 'documents' as NavTab, label: 'Documents', icon: FileText },
   ];
@@ -161,20 +177,45 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     isActive ? 'text-white' : 'text-slate-500 dark:text-slate-400'
                   )}
                 />
+
+                {collapsed && item.id === 'tasks' && item.urgency && (
+                  item.urgency.overdue > 0 ? (
+                    <span className="absolute top-2 right-2 h-2.5 w-2.5 rounded-full bg-rose-500 animate-pulse ring-2 ring-white dark:ring-slate-900" title={`${item.urgency.overdue} overdue`} />
+                  ) : item.urgency.dueToday > 0 ? (
+                    <span className="absolute top-2 right-2 h-2.5 w-2.5 rounded-full bg-amber-500 ring-2 ring-white dark:ring-slate-900" title={`${item.urgency.dueToday} due today`} />
+                  ) : null
+                )}
+
                 {!collapsed && (
                   <>
                     <span className="flex-1 text-left">{item.label}</span>
                     {item.count && (
-                      <span
-                        className={cn(
-                          'rounded-full px-2 py-0.5 text-xs font-semibold',
-                          isActive
-                            ? 'bg-white/20 text-white'
-                            : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
-                        )}
-                      >
-                        {item.count}
-                      </span>
+                      item.id === 'tasks' && item.urgency?.overdue && item.urgency.overdue > 0 ? (
+                        <span
+                          title={`${item.urgency.overdue} overdue task${item.urgency.overdue > 1 ? 's' : ''}`}
+                          className="rounded-full bg-rose-500 px-2 py-0.5 text-xs font-bold text-white shadow-xs animate-pulse"
+                        >
+                          {item.count}
+                        </span>
+                      ) : item.id === 'tasks' && item.urgency?.dueToday && item.urgency.dueToday > 0 ? (
+                        <span
+                          title={`${item.urgency.dueToday} task${item.urgency.dueToday > 1 ? 's' : ''} due today`}
+                          className="rounded-full bg-amber-500 px-2 py-0.5 text-xs font-bold text-white shadow-xs"
+                        >
+                          {item.count}
+                        </span>
+                      ) : (
+                        <span
+                          className={cn(
+                            'rounded-full px-2 py-0.5 text-xs font-semibold',
+                            isActive
+                              ? 'bg-white/20 text-white'
+                              : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                          )}
+                        >
+                          {item.count}
+                        </span>
+                      )
                     )}
                   </>
                 )}

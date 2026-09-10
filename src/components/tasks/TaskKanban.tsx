@@ -14,6 +14,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { Clock, CheckSquare, Sparkles } from 'lucide-react';
 import { format, parseISO, isPast } from 'date-fns';
 import { TaskItem, TaskStatus, TaskPriority } from '@/types/database.types';
+import { getDeadlineCountdown } from '@/utils/dateUtils';
 import { cn } from '@/lib/utils';
 
 interface TaskKanbanProps {
@@ -158,6 +159,7 @@ const DraggableTaskCard: React.FC<DraggableTaskCardProps> = ({
   });
 
   const isOverdue = task.due_at && isPast(parseISO(task.due_at)) && task.status !== 'done';
+  const countdown = getDeadlineCountdown(task.due_at);
   const completedSubtasks = task.subtasks?.filter((s) => s.completed).length || 0;
   const totalSubtasks = task.subtasks?.length || 0;
   const priorityInfo = priorityStyles[task.priority] || priorityStyles.medium;
@@ -215,15 +217,15 @@ const DraggableTaskCard: React.FC<DraggableTaskCardProps> = ({
 
       <div className="mt-3 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 border-t border-slate-100 pt-2 dark:border-slate-850">
         {task.due_at ? (
-          <div
+          <span
             className={cn(
-              'flex items-center gap-1',
-              isOverdue ? 'text-rose-600 font-semibold dark:text-rose-400' : ''
+              'inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] font-semibold',
+              countdown.badgeClass
             )}
           >
-            <Clock className="h-3 w-3" />
-            <span>{format(parseISO(task.due_at), 'MMM d')}</span>
-          </div>
+            <Clock className="h-2.5 w-2.5" />
+            {countdown.label}
+          </span>
         ) : (
           <span className="text-slate-400">No deadline</span>
         )}

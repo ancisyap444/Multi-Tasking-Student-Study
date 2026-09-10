@@ -7,6 +7,7 @@ import { Topbar } from '@/components/layout/Topbar';
 import { SettingsModal, SettingsTabKey } from '@/components/layout/SettingsModal';
 import { GlobalSearchModal } from '@/components/layout/GlobalSearchModal';
 import { AddSubjectModal } from '@/components/subjects/AddSubjectModal';
+import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
 
 import { Login } from '@/pages/Login';
 import { Signup } from '@/pages/Signup';
@@ -23,7 +24,7 @@ import { useTasks } from '@/hooks/useTasks';
 import { useDocuments } from '@/hooks/useDocuments';
 import { Subject, MeetingTime, CalendarEvent, TaskItem, TaskStatus } from '@/types/database.types';
 import { generateAutoStudyBlocks } from '@/utils/studyBlockScheduler';
-import { getWeekDays } from '@/utils/dateUtils';
+import { getWeekDays, getWeeklyStudyHours, parseISO, isPast, isToday } from '@/utils/dateUtils';
 import { setHours, setMinutes } from 'date-fns';
 
 const queryClient = new QueryClient({
@@ -62,6 +63,9 @@ export const MainLayout: React.FC = () => {
   const [isAddEventOpen, setIsAddEventOpen] = useState(false);
   const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
   const [isAutoScheduleOpen, setIsAutoScheduleOpen] = useState(false);
+  const [isOnboardingDismissed, setIsOnboardingDismissed] = useState(() => {
+    return localStorage.getItem('quicksuite_onboarding_completed') === 'true';
+  });
 
   const handleOpenSettings = (tab: SettingsTabKey = 'appearance') => {
     setSettingsTab(tab);
@@ -73,7 +77,16 @@ export const MainLayout: React.FC = () => {
   const { tasks, addTask, updateTaskStatus, updateTask, deleteTask } = useTasks(subjects);
   const { documents } = useDocuments(subjects);
 
-  const activeTaskCount = tasks.filter((t) => t.status !== 'done').length;
+  const completedStudyHours = getWeeklyStudyHours(events);
+
+  const nonDoneTasks = tasks.filter((t) => t.status !== 'done');
+  const overdueCount = nonDoneTasks.filter((t) => t.due_at && isPast(parseISO(t.due_at))).length;
+  const dueTodayCount = nonDoneTasks.filter((t) => t.due_at && !isPast(parseISO(t.due_at)) && isToday(parseISO(t.due_at))).length;
+  const taskUrgency = {
+    total: nonDoneTasks.length,
+    overdue: overdueCount,
+    dueToday: dueTodayCount,
+  };
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -232,7 +245,8 @@ export const MainLayout: React.FC = () => {
         onOpenSettings={handleOpenSettings}
         collapsed={sidebarCollapsed}
         onToggleCollapsed={() => setSidebarCollapsed(!sidebarCollapsed)}
-        activeTaskCount={activeTaskCount}
+        activeTaskCount={taskUrgency.total}
+        taskUrgency={taskUrgency}
       />
 
       <div className="flex flex-1 flex-col overflow-hidden">
@@ -241,6 +255,9 @@ export const MainLayout: React.FC = () => {
           onOpenCreateEvent={() => setIsAddEventOpen(true)}
           onOpenSettings={handleOpenSettings}
           onGoToDashboard={() => setCurrentTab('dashboard')}
+          tasks={tasks}
+          events={events}
+          onNavigate={setCurrentTab}
         />
 
         <main className="flex flex-1 overflow-hidden">
@@ -249,6 +266,7 @@ export const MainLayout: React.FC = () => {
               events={events}
               tasks={tasks}
               subjects={subjects}
+              completedStudyHours={completedStudyHours}
               onToggleTask={handleToggleTaskStatus}
               onNavigate={setCurrentTab}
               onOpenAddSubject={() => setIsAddSubjectOpen(true)}
@@ -322,6 +340,13 @@ export const MainLayout: React.FC = () => {
         onClose={() => setIsAddSubjectOpen(false)}
         onAddSubject={addSubject}
         onAddRecurringClasses={handleAddRecurringClasses}
+      />
+
+      <OnboardingWizard
+        isOpen={subjects.length === 0 && !isOnboardingDismissed}
+        onClose={() => setIsOnboardingDismissed(true)}
+        onAddSubject={addSubject}
+        onAddTask={handleAddTaskWithAutoSchedule}
       />
     </div>
   );
