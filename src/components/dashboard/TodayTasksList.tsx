@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { Clock, AlertCircle, CheckCircle2, ArrowRight, Check } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Clock, CheckCircle2, ArrowRight, Check } from 'lucide-react';
 import { differenceInHours, parseISO, isPast } from 'date-fns';
 import { TaskItem } from '@/types/database.types';
 import { cn } from '@/lib/utils';
@@ -15,9 +15,13 @@ export const TodayTasksList: React.FC<TodayTasksListProps> = ({
   onToggleTask,
   onOpenTasks,
 }) => {
-  const now = new Date();
+  const [now, setNow] = useState(() => new Date());
 
-  // Tasks due within next 48 hours or overdue
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 60000);
+    return () => clearInterval(timer);
+  }, []);
+
   const urgentTasks = useMemo(() => {
     return tasks
       .filter((t) => {
@@ -31,13 +35,10 @@ export const TodayTasksList: React.FC<TodayTasksListProps> = ({
         }
       })
       .sort((a, b) => {
-        // Urgent priority first, then earliest due
         const pOrder: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3 };
-        const diff = pOrder[a.priority] - pOrder[b.priority];
+        const diff = (pOrder[a.priority] ?? 2) - (pOrder[b.priority] ?? 2);
         if (diff !== 0) return diff;
-        return (
-          parseISO(a.due_at!).getTime() - parseISO(b.due_at!).getTime()
-        );
+        return parseISO(a.due_at!).getTime() - parseISO(b.due_at!).getTime();
       });
   }, [tasks, now]);
 

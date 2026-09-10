@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, Clock, Trash2, Edit2, AlertCircle, Sparkles } from 'lucide-react';
+import { Check, Clock, Trash2, Edit2, Sparkles } from 'lucide-react';
 import { format, parseISO, isPast } from 'date-fns';
 import { TaskItem, TaskPriority } from '@/types/database.types';
 import { cn } from '@/lib/utils';
@@ -51,7 +51,6 @@ export const TaskList: React.FC<TaskListProps> = ({
                   onClick={() => onSelectTask(task)}
                   className="group cursor-pointer transition hover:bg-slate-50/80 dark:hover:bg-slate-800/50"
                 >
-                  {/* Complete Checkbox */}
                   <td
                     className="px-4 py-3 text-center"
                     onClick={(e) => {
@@ -71,7 +70,6 @@ export const TaskList: React.FC<TaskListProps> = ({
                     </div>
                   </td>
 
-                  {/* Title & Subject */}
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       {task.subject && (
@@ -95,7 +93,6 @@ export const TaskList: React.FC<TaskListProps> = ({
                     )}
                   </td>
 
-                  {/* Priority */}
                   <td className="px-4 py-3">
                     <span
                       className={cn(
@@ -107,7 +104,6 @@ export const TaskList: React.FC<TaskListProps> = ({
                     </span>
                   </td>
 
-                  {/* Due Date */}
                   <td className="px-4 py-3">
                     {task.due_at ? (
                       <div
@@ -124,12 +120,10 @@ export const TaskList: React.FC<TaskListProps> = ({
                     )}
                   </td>
 
-                  {/* Estimated Hours */}
                   <td className="px-4 py-3 font-medium">
                     {task.estimated_hours ? `${task.estimated_hours} hrs` : '—'}
                   </td>
 
-                  {/* Actions */}
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
                       {!isDone && (

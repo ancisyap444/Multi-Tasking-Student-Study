@@ -25,14 +25,26 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const isConfigured = isSupabaseConfigured();
   
-  // Check if demo mode was explicitly requested or default to demo if not configured
   const [isDemo, setIsDemo] = useState<boolean>(() => {
     if (!isConfigured) return true;
     const saved = localStorage.getItem('quicksuite_force_demo');
     return saved === 'true';
   });
 
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => {
+    const isLoggedIn = localStorage.getItem('quicksuite_logged_in') === 'true';
+    if (isLoggedIn) {
+      return {
+        id: mockProfile.id,
+        email: 'alex.river@university.edu',
+        app_metadata: {},
+        user_metadata: { full_name: mockProfile.full_name },
+        aud: 'authenticated',
+        created_at: new Date().toISOString(),
+      } as unknown as User;
+    }
+    return null;
+  });
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<StudentProfile | null>(() => {
     const savedProfile = localStorage.getItem('quicksuite_profile');
@@ -47,7 +59,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Fetch student profile from Supabase
   const fetchProfile = useCallback(async (userId: string) => {
     try {
       const { data, error } = await supabase
@@ -71,20 +82,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     if (isDemo || !isConfigured) {
-      // Demo mode: mock active session
-      setUser({
-        id: mockProfile.id,
-        email: 'alex.river@university.edu',
-        app_metadata: {},
-        user_metadata: { full_name: mockProfile.full_name },
-        aud: 'authenticated',
-        created_at: new Date().toISOString(),
-      } as unknown as User);
+      const isLoggedIn = localStorage.getItem('quicksuite_logged_in') === 'true';
+      if (isLoggedIn) {
+        setUser({
+          id: mockProfile.id,
+          email: 'alex.river@university.edu',
+          app_metadata: {},
+          user_metadata: { full_name: mockProfile.full_name },
+          aud: 'authenticated',
+          created_at: new Date().toISOString(),
+        } as unknown as User);
+      } else {
+        setUser(null);
+      }
       setIsLoading(false);
       return;
     }
 
-    // Live Supabase Mode
     let mounted = true;
 
     async function initializeAuth() {
@@ -94,6 +108,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setSession(initialSession);
           setUser(initialSession?.user ?? null);
           if (initialSession?.user) {
+            localStorage.setItem('quicksuite_logged_in', 'true');
             await fetchProfile(initialSession.user.id);
           }
         }
@@ -110,8 +125,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(newSession);
       setUser(newSession?.user ?? null);
       if (newSession?.user) {
+        localStorage.setItem('quicksuite_logged_in', 'true');
         await fetchProfile(newSession.user.id);
       } else {
+        localStorage.removeItem('quicksuite_logged_in');
         setProfile(null);
       }
       setIsLoading(false);
@@ -124,7 +141,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [isDemo, isConfigured, fetchProfile]);
 
   const signIn = async (email: string, pass: string) => {
-    if (isDemo) {
+    if (isDemo || !isConfigured) {
+      localStorage.setItem('quicksuite_logged_in', 'true');
       setUser({
         id: mockProfile.id,
         email,
@@ -137,6 +155,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     const { error } = await supabase.auth.signInWithPassword({ email, password: pass });
+    if (!error) {
+      localStorage.setItem('quicksuite_logged_in', 'true');
+    }
     return { error: error as Error | null };
   };
 
@@ -174,7 +195,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
-    if (isDemo) {
+    localStorage.removeItem('quicksuite_logged_in');
+    if (isDemo || !isConfigured) {
       setUser(null);
       return;
     }
@@ -202,7 +224,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     try {
       if (!user) return { error: new Error('No active user') };
-      // Delete user's profile row (cascade will delete subjects, events, tasks, documents)
       const { error } = await supabase.from('profiles').delete().eq('id', user.id);
       if (error) throw error;
 

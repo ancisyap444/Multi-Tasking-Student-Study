@@ -1,43 +1,97 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   X,
   Palette,
   User,
   Keyboard,
-  Database,
   Trash2,
   Check,
   AlertTriangle,
-  ExternalLink,
-  ShieldCheck,
-  Sparkles,
+  Upload,
+  Camera,
+  RotateCcw,
+  Link as LinkIcon,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import { AcademicYear } from '@/types/database.types';
 import { cn } from '@/lib/utils';
 
+export type SettingsTabKey = 'appearance' | 'account' | 'shortcuts';
+
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialTab?: SettingsTabKey;
 }
 
-type TabKey = 'appearance' | 'account' | 'shortcuts' | 'supabase';
+const DEFAULT_AVATAR = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80';
 
-export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
-  const { profile, updateProfile, deleteAccount, isDemo, isConfigured, toggleDemoMode } = useAuth();
+const AVATAR_PRESETS = [
+  { label: 'Alex (Default)', url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80' },
+  { label: 'Marcus', url: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=200&auto=format&fit=crop&q=80' },
+  { label: 'Jordan', url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80' },
+  { label: 'Sarah', url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&auto=format&fit=crop&q=80' },
+  { label: 'Taylor', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=200&auto=format&fit=crop&q=80' },
+  { label: 'David', url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80' },
+];
+
+export const SettingsModal: React.FC<SettingsModalProps> = ({
+  isOpen,
+  onClose,
+  initialTab = 'appearance',
+}) => {
+  const { profile, updateProfile, deleteAccount } = useAuth();
   const { mode, setMode, accent, setAccent } = useTheme();
 
-  const [activeTab, setActiveTab] = useState<TabKey>('appearance');
+  const [activeTab, setActiveTab] = useState<SettingsTabKey>(initialTab);
   const [fullName, setFullName] = useState(profile?.full_name || 'Alex River');
   const [program, setProgram] = useState(profile?.program || 'BS Computer Science');
   const [year, setYear] = useState<AcademicYear>(profile?.year || 'Sophomore');
   const [targetHours, setTargetHours] = useState(profile?.target_study_hours_week || 25);
+  const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || DEFAULT_AVATAR);
+  const [customUrlInput, setCustomUrlInput] = useState('');
+  const [showUrlInput, setShowUrlInput] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      if (initialTab) {
+        setActiveTab(initialTab);
+      }
+      if (profile) {
+        setFullName(profile.full_name || 'Alex River');
+        setProgram(profile.program || 'BS Computer Science');
+        setYear(profile.year || 'Sophomore');
+        setTargetHours(profile.target_study_hours_week || 25);
+        setAvatarUrl(profile.avatar_url || DEFAULT_AVATAR);
+      }
+    }
+  }, [isOpen, initialTab, profile]);
 
   if (!isOpen) return null;
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Selected photo must be smaller than 5MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setAvatarUrl(reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,6 +101,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
       program,
       year,
       target_study_hours_week: targetHours,
+      avatar_url: avatarUrl,
     });
     setIsSaving(false);
     setSaveSuccess(true);
@@ -70,7 +125,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
       <div className="relative flex h-[620px] w-full max-w-2xl flex-col rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden dark:border-slate-800 dark:bg-[#0F172A]">
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 dark:border-slate-800">
           <div>
             <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Settings & Preferences</h2>
@@ -84,7 +138,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
           </button>
         </div>
 
-        {/* Body with Side Navigation Tabs */}
         <div className="flex flex-1 overflow-hidden">
           <div className="w-48 border-r border-slate-100 p-3 space-y-1 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30">
             <button
@@ -125,24 +178,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
               <Keyboard className="h-4 w-4" />
               <span>Shortcuts</span>
             </button>
-
-            <button
-              onClick={() => setActiveTab('supabase')}
-              className={cn(
-                'flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium transition',
-                activeTab === 'supabase'
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'
-              )}
-            >
-              <Database className="h-4 w-4" />
-              <span>Cloud & Database</span>
-            </button>
           </div>
 
-          {/* Content Area */}
           <div className="flex-1 overflow-y-auto p-6">
-            {/* 1. Appearance Tab */}
             {activeTab === 'appearance' && (
               <div className="space-y-6">
                 <div>
@@ -214,64 +252,183 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
               </div>
             )}
 
-            {/* 2. Account / Profile Tab */}
             {activeTab === 'account' && (
-              <form onSubmit={handleSaveProfile} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    Student Full Name
-                  </label>
-                  <input
-                    type="text"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-                  />
+              <form onSubmit={handleSaveProfile} className="space-y-6">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-900/50">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                    <div className="relative group flex-shrink-0">
+                      <img
+                        src={avatarUrl}
+                        alt="Profile Preview"
+                        onError={() => setAvatarUrl(DEFAULT_AVATAR)}
+                        className="h-20 w-20 rounded-full object-cover ring-4 ring-white shadow-md dark:ring-slate-800"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                        title="Upload new photo"
+                      >
+                        <Camera className="h-5 w-5" />
+                      </button>
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileUpload}
+                        accept="image/*"
+                        className="hidden"
+                      />
+                    </div>
+
+                    <div className="flex-1 space-y-2">
+                      <div>
+                        <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Profile Photo</h4>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          Personalize your avatar with an uploaded picture, URL, or preset
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-750"
+                        >
+                          <Upload className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                          <span>Upload Photo</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setShowUrlInput((prev) => !prev)}
+                          className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-750"
+                        >
+                          <LinkIcon className="h-3.5 w-3.5 text-slate-500" />
+                          <span>{showUrlInput ? 'Hide URL' : 'Image URL'}</span>
+                        </button>
+
+                        {avatarUrl !== DEFAULT_AVATAR && (
+                          <button
+                            type="button"
+                            onClick={() => setAvatarUrl(DEFAULT_AVATAR)}
+                            className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-700 shadow-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
+                            title="Reset to default avatar"
+                          >
+                            <RotateCcw className="h-3.5 w-3.5" />
+                            <span>Reset</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {showUrlInput && (
+                    <div className="mt-3 flex items-center gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+                      <input
+                        type="url"
+                        placeholder="Paste image URL (https://...)"
+                        value={customUrlInput}
+                        onChange={(e) => setCustomUrlInput(e.target.value)}
+                        className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-900 focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (customUrlInput.trim()) {
+                            setAvatarUrl(customUrlInput.trim());
+                            setCustomUrlInput('');
+                            setShowUrlInput(false);
+                          }
+                        }}
+                        className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 shadow-sm"
+                      >
+                        Apply
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+                    <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block mb-2">
+                      Or select from presets:
+                    </span>
+                    <div className="flex items-center gap-2.5 overflow-x-auto py-1">
+                      {AVATAR_PRESETS.map((preset, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => setAvatarUrl(preset.url)}
+                          title={preset.label}
+                          className={cn(
+                            'relative h-10 w-10 flex-shrink-0 rounded-full overflow-hidden transition ring-2',
+                            avatarUrl === preset.url
+                              ? 'ring-blue-600 ring-offset-2 dark:ring-offset-slate-900'
+                              : 'ring-transparent hover:ring-slate-300 dark:hover:ring-slate-600 opacity-75 hover:opacity-100'
+                          )}
+                        >
+                          <img src={preset.url} alt={preset.label} className="h-full w-full object-cover" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    Degree Program / Major
-                  </label>
-                  <input
-                    type="text"
-                    value={program}
-                    onChange={(e) => setProgram(e.target.value)}
-                    placeholder="e.g. BS Computer Science"
-                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-4">
                   <div>
                     <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                      Academic Standing
+                      Student Full Name
                     </label>
-                    <select
-                      value={year}
-                      onChange={(e) => setYear(e.target.value as AcademicYear)}
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-                    >
-                      {years.map((y) => (
-                        <option key={y} value={y}>
-                          {y}
-                        </option>
-                      ))}
-                    </select>
+                    <input
+                      type="text"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                    />
                   </div>
 
                   <div>
                     <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                      Target Study Hours / Wk
+                      Degree Program / Major
                     </label>
                     <input
-                      type="number"
-                      min={5}
-                      max={80}
-                      value={targetHours}
-                      onChange={(e) => setTargetHours(Number(e.target.value))}
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                      type="text"
+                      value={program}
+                      onChange={(e) => setProgram(e.target.value)}
+                      placeholder="e.g. BS Computer Science"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                     />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                        Academic Standing
+                      </label>
+                      <select
+                        value={year}
+                        onChange={(e) => setYear(e.target.value as AcademicYear)}
+                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                      >
+                        {years.map((y) => (
+                          <option key={y} value={y}>
+                            {y}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                        Target Study Hours / Wk
+                      </label>
+                      <input
+                        type="number"
+                        min={5}
+                        max={80}
+                        value={targetHours}
+                        onChange={(e) => setTargetHours(Number(e.target.value))}
+                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -292,7 +449,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                   </button>
                 </div>
 
-                {/* Danger Zone: Delete Account */}
                 <div className="mt-8 rounded-xl border border-rose-200 bg-rose-50/50 p-4 dark:border-rose-900/50 dark:bg-rose-950/20">
                   <h4 className="text-xs font-semibold text-rose-800 dark:text-rose-300 flex items-center gap-1.5">
                     <AlertTriangle className="h-3.5 w-3.5" />
@@ -333,7 +489,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
               </form>
             )}
 
-            {/* 3. Keyboard Shortcuts Guide */}
             {activeTab === 'shortcuts' && (
               <div className="space-y-4">
                 <div>
@@ -348,9 +503,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                     { key: 'T', desc: 'Add new assignment / task' },
                     { key: 'Esc', desc: 'Close any active modal or drawer' },
                     { key: 'W', desc: 'Jump to current week on calendar' },
-                  ].map((sc, idx) => (
+                  ].map((sc) => (
                     <div
-                      key={idx}
+                      key={sc.key}
                       className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50/50 px-3.5 py-2.5 text-xs dark:border-slate-800 dark:bg-slate-850"
                     >
                       <span className="text-slate-700 dark:text-slate-300">{sc.desc}</span>
@@ -360,53 +515,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
-
-            {/* 4. Supabase Cloud Connection Tab */}
-            {activeTab === 'supabase' && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Cloud Database & Auth</h3>
-                    <p className="text-xs text-slate-500">Supabase Postgres, Storage, and Row Level Security</p>
-                  </div>
-                  <span
-                    className={cn(
-                      'flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold',
-                      isConfigured && !isDemo
-                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
-                        : 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'
-                    )}
-                  >
-                    <ShieldCheck className="h-3.5 w-3.5" />
-                    {isConfigured && !isDemo ? 'Live Supabase Cloud' : 'Demo Offline Mode'}
-                  </span>
-                </div>
-
-                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 text-xs dark:border-slate-800 dark:bg-slate-900">
-                  <p className="font-semibold text-slate-800 dark:text-slate-200 mb-1">
-                    To connect to your own Supabase project:
-                  </p>
-                  <ol className="list-decimal list-inside space-y-1 text-slate-600 dark:text-slate-400">
-                    <li>Create project on Supabase.com</li>
-                    <li>Run the SQL script from <code className="text-blue-600">supabase/schema.sql</code></li>
-                    <li>Add your project URL & public anon key to <code className="text-blue-600">.env.local</code></li>
-                    <li>Restart the Vite server (<code className="text-blue-600">npm run dev</code>)</li>
-                  </ol>
-                </div>
-
-                {isConfigured && (
-                  <div className="pt-2">
-                    <button
-                      onClick={() => toggleDemoMode(!isDemo)}
-                      className="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                    >
-                      <Sparkles className="h-3.5 w-3.5 text-blue-500" />
-                      <span>{isDemo ? 'Switch to Live Cloud Data' : 'Switch to Demo Mock Data'}</span>
-                    </button>
-                  </div>
-                )}
               </div>
             )}
           </div>

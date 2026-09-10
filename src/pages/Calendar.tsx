@@ -1,5 +1,21 @@
-import React, { useState } from 'react';
-import { addWeeks, subWeeks, addDays, subDays, addMonths, subMonths, format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, parseISO } from 'date-fns';
+import React, { useState, useMemo } from 'react';
+import {
+  addWeeks,
+  subWeeks,
+  addDays,
+  subDays,
+  addMonths,
+  subMonths,
+  format,
+  startOfMonth,
+  endOfMonth,
+  startOfWeek,
+  endOfWeek,
+  eachDayOfInterval,
+  isSameMonth,
+  isSameDay,
+  parseISO,
+} from 'date-fns';
 import { CalendarToolbar, CalendarViewMode } from '@/components/calendar/CalendarToolbar';
 import { WeeklyGrid } from '@/components/calendar/WeeklyGrid';
 import { EventCard } from '@/components/calendar/EventCard';
@@ -59,17 +75,17 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
     setCurrentDate(new Date());
   };
 
-  // Month view calculations
-  const monthDays = React.useMemo(() => {
+  const monthDays = useMemo(() => {
     if (viewMode !== 'month') return [];
-    const start = startOfMonth(currentDate);
-    const end = endOfMonth(currentDate);
+    const monthStart = startOfMonth(currentDate);
+    const monthEnd = endOfMonth(currentDate);
+    const start = startOfWeek(monthStart, { weekStartsOn: 1 });
+    const end = endOfWeek(monthEnd, { weekStartsOn: 1 });
     return eachDayOfInterval({ start, end });
   }, [currentDate, viewMode]);
 
   return (
     <div className="flex flex-1 flex-col h-full overflow-hidden bg-[#F8FAFC] dark:bg-[#0B0F19]">
-      {/* Calendar Header Toolbar */}
       <CalendarToolbar
         currentDate={currentDate}
         viewMode={viewMode}
@@ -83,7 +99,6 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
         onOpenAutoSchedule={onOpenAutoSchedule}
       />
 
-      {/* Main Calendar Viewport */}
       <div className="flex flex-1 overflow-hidden">
         {viewMode === 'week' && (
           <WeeklyGrid
@@ -157,6 +172,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
                     return false;
                   }
                 });
+                const isCurrentMonth = isSameMonth(day, currentDate);
 
                 return (
                   <div
@@ -165,9 +181,19 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
                       setCurrentDate(day);
                       setViewMode('day');
                     }}
-                    className="min-h-[100px] cursor-pointer rounded-xl border border-slate-200 bg-white p-2 transition hover:border-blue-400 dark:border-slate-800 dark:bg-[#0F172A]"
+                    className={cn(
+                      "min-h-[100px] cursor-pointer rounded-xl border p-2 transition hover:border-blue-400",
+                      isCurrentMonth
+                        ? "border-slate-200 bg-white dark:border-slate-800 dark:bg-[#0F172A]"
+                        : "border-slate-100 bg-slate-50/50 opacity-50 dark:border-slate-800/40 dark:bg-[#0F172A]/40"
+                    )}
                   >
-                    <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                    <span
+                      className={cn(
+                        "text-xs font-semibold",
+                        isCurrentMonth ? "text-slate-800 dark:text-slate-200" : "text-slate-400 dark:text-slate-500"
+                      )}
+                    >
                       {format(day, 'd')}
                     </span>
                     <div className="mt-1 space-y-1">
@@ -193,7 +219,6 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
         )}
       </div>
 
-      {/* Add Event Modal */}
       <AddEventModal
         isOpen={isAddEventOpen}
         onClose={onCloseAddEvent}
@@ -201,7 +226,6 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
         onAddEvent={onAddEvent}
       />
 
-      {/* Smart Auto-Study Scheduler Modal */}
       <AutoStudyModal
         isOpen={isAutoScheduleOpen}
         onClose={onCloseAutoSchedule}

@@ -78,13 +78,11 @@ export const mockSubjects: Subject[] = [
   },
 ];
 
-// Helper to generate events for the current week dynamically
 export function generateMockEvents(subjects: Subject[]): CalendarEvent[] {
   const today = new Date();
-  const weekStart = startOfWeek(today, { weekStartsOn: 1 }); // Monday start
+  const weekStart = startOfWeek(today, { weekStartsOn: 1 });
 
   const events: CalendarEvent[] = [
-    // Mon: CS 101 Lecture
     {
       id: 'evt-1',
       user_id: 'demo-student-uuid',
@@ -96,7 +94,6 @@ export function generateMockEvents(subjects: Subject[]): CalendarEvent[] {
       location: 'Turing Hall 302',
       is_recurring: true,
     },
-    // Mon: Auto-placed Study block for CS 101
     {
       id: 'evt-2',
       user_id: 'demo-student-uuid',
@@ -108,7 +105,6 @@ export function generateMockEvents(subjects: Subject[]): CalendarEvent[] {
       location: 'Campus Library 2F',
       notes: 'Auto-placed for CS 101 Assignment deadline',
     },
-    // Mon: PHYS 150 Lecture
     {
       id: 'evt-3',
       user_id: 'demo-student-uuid',
@@ -120,7 +116,6 @@ export function generateMockEvents(subjects: Subject[]): CalendarEvent[] {
       location: 'Feynman Lab 12',
       is_recurring: true,
     },
-    // Tue: DES 210
     {
       id: 'evt-4',
       user_id: 'demo-student-uuid',
@@ -132,7 +127,6 @@ export function generateMockEvents(subjects: Subject[]): CalendarEvent[] {
       location: 'Design Studio 4B',
       is_recurring: true,
     },
-    // Tue: MATH 201
     {
       id: 'evt-5',
       user_id: 'demo-student-uuid',
@@ -144,7 +138,6 @@ export function generateMockEvents(subjects: Subject[]): CalendarEvent[] {
       location: 'Euler Hall 104',
       is_recurring: true,
     },
-    // Tue: Study Block: Math Problem Set
     {
       id: 'evt-6',
       user_id: 'demo-student-uuid',
@@ -155,7 +148,6 @@ export function generateMockEvents(subjects: Subject[]): CalendarEvent[] {
       end_time: setMinutes(setHours(addDays(weekStart, 1), 17), 30).toISOString(),
       location: 'Quiet Study Hall',
     },
-    // Wed: CS 101 Lecture
     {
       id: 'evt-7',
       user_id: 'demo-student-uuid',
@@ -167,7 +159,6 @@ export function generateMockEvents(subjects: Subject[]): CalendarEvent[] {
       location: 'Turing Hall 302',
       is_recurring: true,
     },
-    // Wed: Project Meeting
     {
       id: 'evt-8',
       user_id: 'demo-student-uuid',
@@ -178,7 +169,6 @@ export function generateMockEvents(subjects: Subject[]): CalendarEvent[] {
       end_time: setMinutes(setHours(addDays(weekStart, 2), 13), 45).toISOString(),
       location: 'Google Meet',
     },
-    // Wed: PHYS 150 Lab
     {
       id: 'evt-9',
       user_id: 'demo-student-uuid',
@@ -189,7 +179,6 @@ export function generateMockEvents(subjects: Subject[]): CalendarEvent[] {
       end_time: setMinutes(setHours(addDays(weekStart, 2), 15), 30).toISOString(),
       location: 'Feynman Lab 12',
     },
-    // Thu: DES 210
     {
       id: 'evt-10',
       user_id: 'demo-student-uuid',
@@ -200,7 +189,6 @@ export function generateMockEvents(subjects: Subject[]): CalendarEvent[] {
       end_time: setMinutes(setHours(addDays(weekStart, 3), 11), 30).toISOString(),
       location: 'Design Studio 4B',
     },
-    // Thu: MATH 201
     {
       id: 'evt-11',
       user_id: 'demo-student-uuid',
@@ -211,7 +199,6 @@ export function generateMockEvents(subjects: Subject[]): CalendarEvent[] {
       end_time: setMinutes(setHours(addDays(weekStart, 3), 14), 30).toISOString(),
       location: 'Euler Hall 104',
     },
-    // Thu: Midterm Exam Alert
     {
       id: 'evt-12',
       user_id: 'demo-student-uuid',
@@ -222,7 +209,6 @@ export function generateMockEvents(subjects: Subject[]): CalendarEvent[] {
       end_time: setMinutes(setHours(addDays(weekStart, 3), 17), 30).toISOString(),
       location: 'Auditorium A',
     },
-    // Fri: CS 101
     {
       id: 'evt-13',
       user_id: 'demo-student-uuid',
@@ -233,7 +219,6 @@ export function generateMockEvents(subjects: Subject[]): CalendarEvent[] {
       end_time: setMinutes(setHours(addDays(weekStart, 4), 11), 30).toISOString(),
       location: 'Turing Hall 302',
     },
-    // Fri: STAT 310
     {
       id: 'evt-14',
       user_id: 'demo-student-uuid',

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Upload, FileUp } from 'lucide-react';
+import { X, FileUp } from 'lucide-react';
 import { Subject, DocumentItem } from '@/types/database.types';
 
 interface DocumentUploadModalProps {
@@ -82,7 +82,6 @@ export const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-          {/* Dropzone */}
           <div className="relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 p-6 text-center hover:border-blue-400 dark:border-slate-700">
             <FileUp className="h-8 w-8 text-blue-500 mb-2" />
             <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">
@@ -105,7 +104,7 @@ export const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({
             <input
               type="text"
               required
-              placeholder="e.g. CS101_Fall2025_Syllabus.pdf"
+              placeholder={`e.g. CS101_Syllabus_${new Date().getFullYear()}.pdf`}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"

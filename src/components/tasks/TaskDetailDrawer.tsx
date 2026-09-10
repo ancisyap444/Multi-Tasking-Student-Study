@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { X, Plus, Trash2, Check, Clock, Calendar, CheckSquare, Sparkles } from 'lucide-react';
+import { X, Trash2, Sparkles } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
-import { TaskItem, Subject, Subtask, TaskPriority, TaskStatus, TaskType } from '@/types/database.types';
+import { TaskItem, Subject, Subtask } from '@/types/database.types';
 
 const taskSchema = z.object({
   title: z.string().min(2, 'Title must be at least 2 characters'),
@@ -52,11 +52,23 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
 
   useEffect(() => {
     if (task) {
+      let formattedDue = '';
+      if (task.due_at) {
+        try {
+          const parsed = parseISO(task.due_at);
+          if (!isNaN(parsed.getTime())) {
+            formattedDue = format(parsed, "yyyy-MM-dd'T'HH:mm");
+          }
+        } catch {
+          formattedDue = '';
+        }
+      }
+
       reset({
         title: task.title,
         notes: task.notes || '',
         subject_id: task.subject_id || '',
-        due_at: task.due_at ? format(parseISO(task.due_at), "yyyy-MM-dd'T'HH:mm") : '',
+        due_at: formattedDue,
         priority: task.priority,
         status: task.status,
         task_type: task.task_type || 'homework',
@@ -92,9 +104,17 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
 
   const onSubmit = async (data: TaskFormData) => {
     try {
+      let isoDue: string | undefined = undefined;
+      if (data.due_at) {
+        const d = new Date(data.due_at);
+        if (!isNaN(d.getTime())) {
+          isoDue = d.toISOString();
+        }
+      }
+
       await onUpdateTask(task.id, {
         ...data,
-        due_at: data.due_at ? new Date(data.due_at).toISOString() : undefined,
+        due_at: isoDue,
         subtasks,
       });
       onClose();
@@ -106,7 +126,6 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/40 backdrop-blur-xs">
       <div className="flex h-full w-full max-w-lg flex-col border-l border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-[#0F172A]">
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 dark:border-slate-800">
           <div className="flex items-center gap-2">
             <span className="rounded-md bg-blue-50 px-2 py-0.5 text-xs font-bold text-blue-700 dark:bg-blue-950 dark:text-blue-300">
@@ -128,9 +147,7 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
           </button>
         </div>
 
-        {/* Scrollable Form Body */}
         <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto p-6 space-y-5">
-          {/* Title */}
           <div>
             <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
               Assignment Title
@@ -144,7 +161,6 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
             )}
           </div>
 
-          {/* Subject & Task Type */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
@@ -180,7 +196,6 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
             </div>
           </div>
 
-          {/* Status & Priority */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
@@ -212,7 +227,6 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
             </div>
           </div>
 
-          {/* Due Date & Estimated Hours */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
@@ -240,7 +254,6 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
             </div>
           </div>
 
-          {/* Notes / Detailed Instructions */}
           <div>
             <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
               Instructions & Notes
@@ -253,7 +266,6 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
             />
           </div>
 
-          {/* Subtasks Checklist */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -313,7 +325,6 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
             </div>
           </div>
 
-          {/* Drawer Actions */}
           <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-800">
             <button
               type="button"

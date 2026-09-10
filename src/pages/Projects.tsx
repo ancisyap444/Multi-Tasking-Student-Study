@@ -9,7 +9,7 @@ interface ProjectsPageProps {
 }
 
 export const ProjectsPage: React.FC<ProjectsPageProps> = ({ subjects }) => {
-  const { projects, addProject, toggleMilestone } = useProjects(subjects);
+  const { projects, addProject, deleteProject, toggleMilestone } = useProjects(subjects);
   const [isAddOpen, setIsAddOpen] = useState(false);
 
   return (
@@ -20,6 +20,7 @@ export const ProjectsPage: React.FC<ProjectsPageProps> = ({ subjects }) => {
         onToggleMilestone={(projectId, milestoneId) =>
           toggleMilestone({ projectId, milestoneId })
         }
+        onDeleteProject={(projectId) => deleteProject(projectId)}
         onOpenAddProject={() => setIsAddOpen(true)}
       />
 

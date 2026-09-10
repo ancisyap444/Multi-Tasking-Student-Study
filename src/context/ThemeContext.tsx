@@ -13,6 +13,12 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
+function getEffectiveDark(mode: ThemeMode): boolean {
+  if (mode === 'dark') return true;
+  if (mode === 'light') return false;
+  return typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches;
+}
+
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [mode, setModeState] = useState<ThemeMode>(() => {
     const saved = localStorage.getItem('quicksuite_theme_mode') as ThemeMode;
@@ -24,19 +30,27 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return saved || 'blue';
   });
 
-  const [isDark, setIsDark] = useState<boolean>(false);
+  const [isDark, setIsDark] = useState<boolean>(() => getEffectiveDark(mode));
 
   useEffect(() => {
     const root = document.documentElement;
-    const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const effectiveDark = mode === 'dark' || (mode === 'system' && systemDark);
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
-    setIsDark(effectiveDark);
+    const updateTheme = () => {
+      const effectiveDark = mode === 'dark' || (mode === 'system' && mediaQuery.matches);
+      setIsDark(effectiveDark);
+      if (effectiveDark) {
+        root.classList.add('dark');
+      } else {
+        root.classList.remove('dark');
+      }
+    };
 
-    if (effectiveDark) {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
+    updateTheme();
+
+    if (mode === 'system') {
+      mediaQuery.addEventListener('change', updateTheme);
+      return () => mediaQuery.removeEventListener('change', updateTheme);
     }
   }, [mode]);
 

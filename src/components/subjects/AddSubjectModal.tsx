@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Plus, Trash2, Calendar, BookOpen, Clock } from 'lucide-react';
+import { X } from 'lucide-react';
 import { Subject, SubjectColor, DayOfWeek, MeetingTime } from '@/types/database.types';
 
 interface AddSubjectModalProps {
@@ -35,11 +35,10 @@ export const AddSubjectModal: React.FC<AddSubjectModalProps> = ({
   const [color, setColor] = useState<SubjectColor>('mint');
   const [instructor, setInstructor] = useState('');
   const [location, setLocation] = useState('');
-
-  // Meeting times schedule
   const [selectedDays, setSelectedDays] = useState<DayOfWeek[]>(['MON', 'WED', 'FRI']);
   const [startTime, setStartTime] = useState('10:00');
   const [endTime, setEndTime] = useState('11:30');
+  const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen) return null;
@@ -55,6 +54,12 @@ export const AddSubjectModal: React.FC<AddSubjectModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !code.trim()) return;
+
+    if (selectedDays.length > 0 && startTime >= endTime) {
+      setError('End time must be after start time');
+      return;
+    }
+    setError(null);
 
     setIsSubmitting(true);
     try {
@@ -84,6 +89,7 @@ export const AddSubjectModal: React.FC<AddSubjectModalProps> = ({
       setLocation('');
     } catch (err) {
       console.error('Failed to create subject:', err);
+      setError('Failed to create subject. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -166,7 +172,6 @@ export const AddSubjectModal: React.FC<AddSubjectModalProps> = ({
             </div>
           </div>
 
-          {/* Color Badge Picker */}
           <div>
             <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
               Course Pastel Badge Color
@@ -190,7 +195,6 @@ export const AddSubjectModal: React.FC<AddSubjectModalProps> = ({
             </div>
           </div>
 
-          {/* Recurring Meeting Schedule */}
           <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 space-y-3 dark:border-slate-800 dark:bg-slate-900/50">
             <span className="block text-xs font-semibold text-slate-800 dark:text-slate-200">
               Recurring Lecture Schedule (Auto-locks onto weekly calendar)
@@ -241,6 +245,10 @@ export const AddSubjectModal: React.FC<AddSubjectModalProps> = ({
               </div>
             </div>
           </div>
+
+          {error && (
+            <p className="text-xs text-rose-600 dark:text-rose-400 font-medium">{error}</p>
+          )}
 
           <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
             <button

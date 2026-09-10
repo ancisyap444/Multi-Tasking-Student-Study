@@ -8,8 +8,10 @@ import {
   useSensors,
   DragEndEvent,
   useDroppable,
+  useDraggable,
 } from '@dnd-kit/core';
-import { Clock, CheckSquare, AlertCircle, Sparkles, MoreVertical } from 'lucide-react';
+import { CSS } from '@dnd-kit/utilities';
+import { Clock, CheckSquare, Sparkles } from 'lucide-react';
 import { format, parseISO, isPast } from 'date-fns';
 import { TaskItem, TaskStatus, TaskPriority } from '@/types/database.types';
 import { cn } from '@/lib/utils';
@@ -43,7 +45,7 @@ export const TaskKanban: React.FC<TaskKanbanProps> = ({
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 5,
+        distance: 8,
       },
     }),
     useSensor(KeyboardSensor)
@@ -108,7 +110,6 @@ const DroppableColumn: React.FC<DroppableColumnProps> = ({
         isOver && 'ring-2 ring-blue-500/40 border-blue-300'
       )}
     >
-      {/* Column Header */}
       <div className="flex items-center justify-between pb-3">
         <div className="flex items-center gap-2">
           <span className={cn('h-2.5 w-2.5 rounded-full', column.dot)} />
@@ -121,7 +122,6 @@ const DroppableColumn: React.FC<DroppableColumnProps> = ({
         </span>
       </div>
 
-      {/* Task Cards Stack */}
       <div className="flex flex-1 flex-col gap-3 overflow-y-auto min-h-[400px]">
         {tasks.map((task) => (
           <DraggableTaskCard
@@ -153,17 +153,30 @@ const DraggableTaskCard: React.FC<DraggableTaskCardProps> = ({
   onSelect,
   onAutoSchedule,
 }) => {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: task.id,
+  });
+
   const isOverdue = task.due_at && isPast(parseISO(task.due_at)) && task.status !== 'done';
   const completedSubtasks = task.subtasks?.filter((s) => s.completed).length || 0;
   const totalSubtasks = task.subtasks?.length || 0;
   const priorityInfo = priorityStyles[task.priority] || priorityStyles.medium;
 
+  const style: React.CSSProperties = {
+    transform: transform ? CSS.Translate.toString(transform) : undefined,
+    opacity: isDragging ? 0.4 : 1,
+    zIndex: isDragging ? 50 : undefined,
+  };
+
   return (
     <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
       onClick={onSelect}
       className="group relative cursor-grab active:cursor-grabbing rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs transition-all hover:border-slate-300 hover:shadow-card dark:border-slate-800 dark:bg-[#0F172A] dark:hover:border-slate-700"
     >
-      {/* Top Badges */}
       <div className="flex items-center justify-between gap-1">
         <div className="flex items-center gap-1.5 flex-wrap">
           {task.subject && (
@@ -196,12 +209,10 @@ const DraggableTaskCard: React.FC<DraggableTaskCardProps> = ({
         )}
       </div>
 
-      {/* Task Title */}
       <h4 className="mt-2 text-xs font-semibold text-slate-900 leading-snug line-clamp-2 dark:text-white">
         {task.title}
       </h4>
 
-      {/* Footer Info */}
       <div className="mt-3 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 border-t border-slate-100 pt-2 dark:border-slate-850">
         {task.due_at ? (
           <div

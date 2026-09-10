@@ -1,15 +1,13 @@
-import React, { useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Clock,
   MapPin,
   Video,
-  FileText,
-  Sparkles,
   ArrowRight,
   BookOpen,
   CheckCircle2,
 } from 'lucide-react';
-import { differenceInMinutes, parseISO, isAfter, isBefore, addHours } from 'date-fns';
+import { differenceInMinutes, parseISO, isAfter, isBefore } from 'date-fns';
 import { CalendarEvent } from '@/types/database.types';
 import { formatEventTimeRange } from '@/utils/dateUtils';
 
@@ -22,9 +20,13 @@ export const NextClassBanner: React.FC<NextClassBannerProps> = ({
   events,
   onOpenCalendar,
 }) => {
-  const now = new Date();
+  const [now, setNow] = useState(() => new Date());
 
-  // Find the next upcoming or currently active class/event
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 60000);
+    return () => clearInterval(timer);
+  }, []);
+
   const imminentEvent = useMemo(() => {
     const futureEvents = events
       .filter((e) => {
@@ -73,7 +75,6 @@ export const NextClassBanner: React.FC<NextClassBannerProps> = ({
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-blue-200/80 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 p-6 text-white shadow-card dark:border-blue-900/40">
-      {/* Background ambient lighting */}
       <div className="pointer-events-none absolute -right-12 -top-12 h-64 w-64 rounded-full bg-white/10 blur-2xl" />
 
       <div className="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -116,7 +117,6 @@ export const NextClassBanner: React.FC<NextClassBannerProps> = ({
           </div>
         </div>
 
-        {/* Quick lecture action buttons */}
         <div className="flex items-center gap-2">
           {imminentEvent.location?.toLowerCase().includes('zoom') ? (
             <a

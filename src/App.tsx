@@ -4,7 +4,7 @@ import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { Sidebar, NavTab } from '@/components/layout/Sidebar';
 import { Topbar } from '@/components/layout/Topbar';
-import { SettingsModal } from '@/components/layout/SettingsModal';
+import { SettingsModal, SettingsTabKey } from '@/components/layout/SettingsModal';
 import { GlobalSearchModal } from '@/components/layout/GlobalSearchModal';
 import { AddSubjectModal } from '@/components/subjects/AddSubjectModal';
 
@@ -24,48 +24,77 @@ import { useDocuments } from '@/hooks/useDocuments';
 import { Subject, MeetingTime, CalendarEvent, TaskItem, TaskStatus } from '@/types/database.types';
 import { generateAutoStudyBlocks } from '@/utils/studyBlockScheduler';
 import { getWeekDays } from '@/utils/dateUtils';
-import { setHours, setMinutes, format } from 'date-fns';
+import { setHours, setMinutes } from 'date-fns';
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       refetchOnWindowFocus: false,
-      staleTime: 1000 * 60 * 5, // 5 mins
+      staleTime: 1000 * 60 * 5,
     },
   },
 });
 
 type AuthView = 'login' | 'signup' | 'forgot_password';
 
+function runOneTimeMigrations() {
+  if (localStorage.getItem('quicksuite_migrated_v2')) return;
+  ['quicksuite_demo_subjects', 'quicksuite_demo_tasks', 'quicksuite_demo_documents', 'quicksuite_demo_events', 'quicksuite_demo_projects', 'quicksuite_projects'].forEach((key) =>
+    localStorage.removeItem(key)
+  );
+  localStorage.setItem('quicksuite_migrated_v2', 'true');
+}
+
+runOneTimeMigrations();
+
 export const MainLayout: React.FC = () => {
   const { user, isLoading } = useAuth();
   const [authView, setAuthView] = useState<AuthView>('login');
 
-  // Navigation & UI State
-  const [currentTab, setCurrentTab] = useState<NavTab>('calendar');
+  const [currentTab, setCurrentTab] = useState<NavTab>('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [selectedSubjectFilter, setSelectedSubjectFilter] = useState<string | null>(null);
 
-  // Modals state
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [settingsTab, setSettingsTab] = useState<SettingsTabKey>('appearance');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAddSubjectOpen, setIsAddSubjectOpen] = useState(false);
   const [isAddEventOpen, setIsAddEventOpen] = useState(false);
   const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
   const [isAutoScheduleOpen, setIsAutoScheduleOpen] = useState(false);
 
-  // Data Hooks
-  const { subjects, addSubject } = useSubjects();
+  const handleOpenSettings = (tab: SettingsTabKey = 'appearance') => {
+    setSettingsTab(tab);
+    setIsSettingsOpen(true);
+  };
+
+  const { subjects, addSubject, deleteSubject } = useSubjects();
   const { events, addEvent, addMultipleEvents, deleteEvent } = useEvents(subjects);
   const { tasks, addTask, updateTaskStatus, updateTask, deleteTask } = useTasks(subjects);
   const { documents } = useDocuments(subjects);
 
-  // Global Keyboard Shortcuts (Ctrl+K, ⌘1, C, T)
+  const activeTaskCount = tasks.filter((t) => t.status !== 'done').length;
+
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      // Ignore when typing inside input or textarea
+      if (e.key === 'Escape') {
+        setIsSettingsOpen(false);
+        setIsSearchOpen(false);
+        setIsAddSubjectOpen(false);
+        setIsAddEventOpen(false);
+        setIsAddTaskOpen(false);
+        setIsAutoScheduleOpen(false);
+        return;
+      }
+
       const target = e.target as HTMLElement;
       const isInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable;
+
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'b' || e.key === 'B')) {
+        e.preventDefault();
+        setSidebarCollapsed((prev) => !prev);
+        return;
+      }
 
       if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === '1')) {
         e.preventDefault();
@@ -73,7 +102,7 @@ export const MainLayout: React.FC = () => {
         return;
       }
 
-      if (!isInput && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      if (!isInput && !e.ctrlKey && !e.metaKey && !e.altKey && user) {
         if (e.key === 'c' || e.key === 'C') {
           e.preventDefault();
           setIsAddEventOpen(true);
@@ -86,9 +115,8 @@ export const MainLayout: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [user]);
 
-  // When adding a subject with lecture schedules, generate this week's recurring classes!
   const handleAddRecurringClasses = useCallback(
     async (newSubject: Subject, schedules: MeetingTime[]) => {
       const weekDays = getWeekDays(new Date());
@@ -111,18 +139,20 @@ export const MainLayout: React.FC = () => {
           const [startH, startM] = item.start.split(':').map(Number);
           const [endH, endM] = item.end.split(':').map(Number);
 
-          const startIso = setMinutes(setHours(targetDay, startH), startM).toISOString();
-          const endIso = setMinutes(setHours(targetDay, endH), endM).toISOString();
+          if (!isNaN(startH) && !isNaN(startM) && !isNaN(endH) && !isNaN(endM)) {
+            const startIso = setMinutes(setHours(targetDay, startH), startM).toISOString();
+            const endIso = setMinutes(setHours(targetDay, endH), endM).toISOString();
 
-          generatedEvents.push({
-            title: `${newSubject.code}: Lecture`,
-            type: 'class',
-            subject_id: newSubject.id,
-            start_time: startIso,
-            end_time: endIso,
-            location: newSubject.location,
-            is_recurring: true,
-          });
+            generatedEvents.push({
+              title: `${newSubject.code}: Lecture`,
+              type: 'class',
+              subject_id: newSubject.id,
+              start_time: startIso,
+              end_time: endIso,
+              location: newSubject.location,
+              is_recurring: true,
+            });
+          }
         }
       }
 
@@ -133,7 +163,6 @@ export const MainLayout: React.FC = () => {
     [addMultipleEvents]
   );
 
-  // When adding a task with autoSchedule = true, immediately slot study sessions!
   const handleAddTaskWithAutoSchedule = async (
     newTaskData: Omit<TaskItem, 'id' | 'user_id' | 'created_at' | 'subject'>,
     autoSchedule: boolean
@@ -162,7 +191,6 @@ export const MainLayout: React.FC = () => {
     await updateTaskStatus({ id: task.id, status: nextStatus });
   };
 
-  // If loading auth
   if (isLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-[#F8FAFC] dark:bg-[#0B0F19]">
@@ -176,7 +204,6 @@ export const MainLayout: React.FC = () => {
     );
   }
 
-  // If not logged in, render auth flows
   if (!user) {
     if (authView === 'signup') {
       return <Signup onGoToLogin={() => setAuthView('login')} />;
@@ -194,7 +221,6 @@ export const MainLayout: React.FC = () => {
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-[#F8FAFC] dark:bg-[#0B0F19]">
-      {/* 1. Collapsible Left Rail Sidebar */}
       <Sidebar
         currentTab={currentTab}
         onSelectTab={setCurrentTab}
@@ -202,21 +228,21 @@ export const MainLayout: React.FC = () => {
         selectedSubjectFilter={selectedSubjectFilter}
         onSelectSubjectFilter={setSelectedSubjectFilter}
         onOpenAddSubject={() => setIsAddSubjectOpen(true)}
-        onOpenSettings={() => setIsSettingsOpen(true)}
+        onDeleteSubject={deleteSubject}
+        onOpenSettings={handleOpenSettings}
         collapsed={sidebarCollapsed}
         onToggleCollapsed={() => setSidebarCollapsed(!sidebarCollapsed)}
+        activeTaskCount={activeTaskCount}
       />
 
-      {/* 2. Main Desktop Worksurface */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Top Header Bar */}
         <Topbar
           onOpenSearch={() => setIsSearchOpen(true)}
           onOpenCreateEvent={() => setIsAddEventOpen(true)}
-          onOpenSettings={() => setIsSettingsOpen(true)}
+          onOpenSettings={handleOpenSettings}
+          onGoToDashboard={() => setCurrentTab('dashboard')}
         />
 
-        {/* Dynamic Screen View */}
         <main className="flex flex-1 overflow-hidden">
           {currentTab === 'dashboard' && (
             <Dashboard
@@ -276,13 +302,12 @@ export const MainLayout: React.FC = () => {
         </main>
       </div>
 
-      {/* Settings Modal */}
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
+        initialTab={settingsTab}
       />
 
-      {/* Global Search Modal (⌘1 / Ctrl+K) */}
       <GlobalSearchModal
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
@@ -292,7 +317,6 @@ export const MainLayout: React.FC = () => {
         onNavigate={setCurrentTab}
       />
 
-      {/* Add Subject Modal */}
       <AddSubjectModal
         isOpen={isAddSubjectOpen}
         onClose={() => setIsAddSubjectOpen(false)}

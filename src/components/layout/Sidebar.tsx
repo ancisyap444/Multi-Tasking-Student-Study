@@ -5,13 +5,12 @@ import {
   CheckSquare,
   FolderKanban,
   FileText,
-  Bell,
   Settings,
   ChevronLeft,
   ChevronRight,
   Plus,
-  Sparkles,
   BookOpen,
+  X,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Subject, SubjectColor } from '@/types/database.types';
@@ -26,9 +25,11 @@ interface SidebarProps {
   selectedSubjectFilter: string | null;
   onSelectSubjectFilter: (subjectId: string | null) => void;
   onOpenAddSubject: () => void;
-  onOpenSettings: () => void;
+  onDeleteSubject?: (id: string) => void;
+  onOpenSettings: (tab?: 'appearance' | 'account' | 'shortcuts') => void;
   collapsed: boolean;
   onToggleCollapsed: () => void;
+  activeTaskCount?: number;
 }
 
 const colorBadgeStyles: Record<SubjectColor, { dot: string; bg: string; text: string }> = {
@@ -46,16 +47,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
   selectedSubjectFilter,
   onSelectSubjectFilter,
   onOpenAddSubject,
+  onDeleteSubject,
   onOpenSettings,
   collapsed,
   onToggleCollapsed,
+  activeTaskCount = 0,
 }) => {
-  const { profile, isDemo, isConfigured } = useAuth();
+  const { profile } = useAuth();
 
   const navItems = [
     { id: 'dashboard' as NavTab, label: 'Dashboard', icon: LayoutDashboard },
     { id: 'calendar' as NavTab, label: 'Calendar', icon: CalendarIcon, badge: 'Active' },
-    { id: 'tasks' as NavTab, label: 'My Tasks', icon: CheckSquare, count: 4 },
+    { id: 'tasks' as NavTab, label: 'My Tasks', icon: CheckSquare, count: activeTaskCount || undefined },
     { id: 'projects' as NavTab, label: 'Projects', icon: FolderKanban },
     { id: 'documents' as NavTab, label: 'Documents', icon: FileText },
   ];
@@ -67,22 +70,29 @@ export const Sidebar: React.FC<SidebarProps> = ({
         collapsed ? 'w-20' : 'w-64'
       )}
     >
-      {/* Brand & Student Workspace Header */}
       <div className="flex flex-col border-b border-slate-100 p-3.5 dark:border-slate-800/80">
         <div className="flex items-center justify-between mb-2.5">
           {!collapsed ? (
-            <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600 text-white shadow-sm shadow-blue-500/30">
+            <button
+              onClick={() => onSelectTab('dashboard')}
+              title="Multi-Tasking — Go to Dashboard"
+              className="group flex items-center gap-2 rounded-xl text-left transition hover:opacity-80 focus:outline-none"
+            >
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600 text-white shadow-sm shadow-blue-500/30 transition-transform group-hover:scale-105">
                 <BookOpen className="h-4 w-4" />
               </div>
               <span className="text-sm font-extrabold tracking-tight text-slate-900 dark:text-white">
                 Multi-Tasking
               </span>
-            </div>
+            </button>
           ) : (
-            <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white shadow-sm shadow-blue-500/30">
+            <button
+              onClick={() => onSelectTab('dashboard')}
+              title="Multi-Tasking — Go to Dashboard"
+              className="mx-auto flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white shadow-sm shadow-blue-500/30 transition-transform hover:scale-105 focus:outline-none"
+            >
               <BookOpen className="h-4 w-4" />
-            </div>
+            </button>
           )}
 
           <button
@@ -97,9 +107,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </button>
         </div>
 
-        {/* Student Workspace Pill */}
         {!collapsed && (
-          <div className="flex items-center gap-2.5 rounded-xl bg-slate-50/80 p-2 border border-slate-100 dark:bg-slate-900/40 dark:border-slate-800">
+          <div
+            onClick={() => onOpenSettings('account')}
+            className="group flex cursor-pointer items-center gap-2.5 rounded-xl bg-slate-50/80 p-2 border border-slate-100 transition hover:bg-slate-100/80 dark:bg-slate-900/40 dark:border-slate-800 dark:hover:bg-slate-800/80"
+            title="Customize student profile & photo"
+          >
             <div className="relative flex-shrink-0">
               <img
                 src={
@@ -112,7 +125,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500 dark:border-slate-900" />
             </div>
             <div className="flex flex-col truncate">
-              <span className="truncate text-xs font-semibold text-slate-900 dark:text-white">
+              <span className="truncate text-xs font-semibold text-slate-900 group-hover:text-blue-600 dark:text-white dark:group-hover:text-blue-400">
                 {profile?.full_name || 'Alex River'}
               </span>
               <span className="truncate text-[10px] text-slate-500 dark:text-slate-400">
@@ -123,7 +136,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
         )}
       </div>
 
-      {/* Main Navigation */}
       <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
         <div className="space-y-1">
           {navItems.map((item) => {
@@ -171,7 +183,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
           })}
         </div>
 
-        {/* Enrolled Subjects / Favorites Filter */}
         {!collapsed && (
           <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800/80">
             <div className="flex items-center justify-between px-2">
@@ -209,24 +220,38 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 const isSelected = selectedSubjectFilter === sub.id;
 
                 return (
-                  <button
+                  <div
                     key={sub.id}
-                    onClick={() => onSelectSubjectFilter(sub.id)}
                     className={cn(
-                      'flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium transition group',
+                      'group flex w-full items-center rounded-lg text-xs font-medium transition',
                       isSelected
-                        ? 'bg-slate-100 font-semibold text-slate-900 dark:bg-slate-800 dark:text-white'
-                        : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800/40'
+                        ? 'bg-slate-100 dark:bg-slate-800'
+                        : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'
                     )}
                   >
-                    <div className="flex items-center gap-2 truncate">
+                    <button
+                      onClick={() => onSelectSubjectFilter(sub.id)}
+                      className="flex flex-1 items-center gap-2 truncate px-2.5 py-1.5"
+                    >
                       <span className={cn('h-2 w-2 flex-shrink-0 rounded-full', colorTokens.dot)} />
-                      <span className="font-medium text-slate-700 dark:text-slate-300">
+                      <span className={cn('font-medium', isSelected ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300')}>
                         {sub.code}
                       </span>
                       <span className="truncate text-slate-400 text-[11px]">{sub.name}</span>
-                    </div>
-                  </button>
+                    </button>
+                    {onDeleteSubject && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteSubject(sub.id);
+                        }}
+                        title={`Remove ${sub.code}`}
+                        className="mr-1.5 flex-shrink-0 rounded p-0.5 opacity-0 transition hover:bg-rose-100 hover:text-rose-600 group-hover:opacity-100 dark:hover:bg-rose-950/40 dark:hover:text-rose-400"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    )}
+                  </div>
                 );
               })}
             </div>
@@ -234,35 +259,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
         )}
       </div>
 
-      {/* Footer / Settings & Mode Indicator */}
       <div className="border-t border-slate-100 p-3 dark:border-slate-800/80 space-y-2">
-        {/* Supabase status badge */}
-        {!collapsed && (
-          <div
-            className={cn(
-              'flex items-center justify-between rounded-xl px-3 py-2 text-xs border',
-              isConfigured && !isDemo
-                ? 'bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-950/30 dark:border-emerald-800/50 dark:text-emerald-300'
-                : 'bg-blue-50/70 border-blue-200/60 text-blue-800 dark:bg-blue-950/30 dark:border-blue-800/50 dark:text-blue-300'
-            )}
-          >
-            <div className="flex items-center gap-2">
-              <span
-                className={cn(
-                  'h-2 w-2 rounded-full animate-pulse',
-                  isConfigured && !isDemo ? 'bg-emerald-500' : 'bg-blue-500'
-                )}
-              />
-              <span className="font-medium">
-                {isConfigured && !isDemo ? 'Cloud RLS Connected' : 'Multi-Tasking Demo'}
-              </span>
-            </div>
-            <Sparkles className="h-3.5 w-3.5 text-blue-500" />
-          </div>
-        )}
-
         <button
-          onClick={onOpenSettings}
+          onClick={() => onOpenSettings('appearance')}
           title={collapsed ? 'Settings' : undefined}
           className={cn(
             'flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200',
@@ -276,6 +275,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {collapsed && (
           <button
             onClick={onToggleCollapsed}
+            title="Expand sidebar"
             className="flex w-full items-center justify-center rounded-xl py-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
           >
             <ChevronRight className="h-5 w-5" />

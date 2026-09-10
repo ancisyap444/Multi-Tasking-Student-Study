@@ -2,31 +2,36 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/context/AuthContext';
 import { CalendarEvent, Subject } from '@/types/database.types';
-import { generateMockEvents } from '@/lib/mockData';
 
 const LOCAL_STORAGE_KEY = 'quicksuite_demo_events';
+
+function getStoredEvents(): CalendarEvent[] {
+  const cached = localStorage.getItem(LOCAL_STORAGE_KEY);
+  if (cached) {
+    try {
+      return JSON.parse(cached);
+    } catch {
+      return [];
+    }
+  }
+  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify([]));
+  return [];
+}
+
+function saveStoredEvents(events: CalendarEvent[]): void {
+  const unhydrated = events.map(({ subject: _subject, ...rest }) => rest as CalendarEvent);
+  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(unhydrated));
+}
 
 export function useEvents(subjects: Subject[] = []) {
   const { user, isDemo, isConfigured } = useAuth();
   const queryClient = useQueryClient();
 
   const eventsQuery = useQuery({
-    queryKey: ['events', user?.id, isDemo, subjects.length],
+    queryKey: ['events', user?.id, isDemo, subjects],
     queryFn: async (): Promise<CalendarEvent[]> => {
       if (isDemo || !isConfigured || !user) {
-        const cached = localStorage.getItem(LOCAL_STORAGE_KEY);
-        let items: CalendarEvent[];
-        if (cached) {
-          try {
-            items = JSON.parse(cached);
-          } catch {
-            items = generateMockEvents(subjects);
-          }
-        } else {
-          items = generateMockEvents(subjects);
-          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(items));
-        }
-
+        const items = getStoredEvents();
         return items.map((evt) => ({
           ...evt,
           subject: subjects.find((s) => s.id === evt.subject_id),
@@ -53,9 +58,8 @@ export function useEvents(subjects: Subject[] = []) {
           created_at: new Date().toISOString(),
           subject: subjects.find((s) => s.id === newEvent.subject_id),
         };
-        const current = eventsQuery.data || [];
-        const updated = [...current, item];
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
+        const current = getStoredEvents();
+        saveStoredEvents([...current, item]);
         return item;
       }
 
@@ -83,9 +87,8 @@ export function useEvents(subjects: Subject[] = []) {
           created_at: new Date().toISOString(),
           subject: subjects.find((s) => s.id === evt.subject_id),
         }));
-        const current = eventsQuery.data || [];
-        const updated = [...current, ...items];
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
+        const current = getStoredEvents();
+        saveStoredEvents([...current, ...items]);
         return items;
       }
 
@@ -106,9 +109,9 @@ export function useEvents(subjects: Subject[] = []) {
   const deleteEventMutation = useMutation({
     mutationFn: async (id: string) => {
       if (isDemo || !isConfigured || !user) {
-        const current = eventsQuery.data || [];
+        const current = getStoredEvents();
         const updated = current.filter((e) => e.id !== id);
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
+        saveStoredEvents(updated);
         return id;
       }
 

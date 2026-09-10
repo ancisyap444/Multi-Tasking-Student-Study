@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { X, Calendar, Clock, MapPin, Tag } from 'lucide-react';
-import { format, setHours, setMinutes, addMinutes } from 'date-fns';
+import { X } from 'lucide-react';
+import { format, setHours, setMinutes } from 'date-fns';
 import { Subject, EventType, CalendarEvent } from '@/types/database.types';
 
 interface AddEventModalProps {
@@ -23,6 +23,7 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({
   const [startTime, setStartTime] = useState('10:00');
   const [endTime, setEndTime] = useState('11:30');
   const [location, setLocation] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen) return null;
@@ -30,6 +31,12 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
+
+    if (startTime >= endTime) {
+      setError('End time must be after start time');
+      return;
+    }
+    setError(null);
 
     setIsSubmitting(true);
     try {
@@ -53,6 +60,7 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({
       setTitle('');
     } catch (err) {
       console.error('Failed to create event:', err);
+      setError('Failed to create event. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -174,6 +182,10 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({
               className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
             />
           </div>
+
+          {error && (
+            <p className="text-xs text-rose-600 dark:text-rose-400 font-medium">{error}</p>
+          )}
 
           <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
             <button

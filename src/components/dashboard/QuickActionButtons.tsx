@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, CheckSquare, Sparkles, BookOpen } from 'lucide-react';
+import { CheckSquare, Sparkles, BookOpen } from 'lucide-react';
 
 interface QuickActionButtonsProps {
   onAddSubject: () => void;
@@ -41,11 +41,11 @@ export const QuickActionButtons: React.FC<QuickActionButtonsProps> = ({
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      {actions.map((act, idx) => {
+      {actions.map((act) => {
         const Icon = act.icon;
         return (
           <button
-            key={idx}
+            key={act.title}
             onClick={act.onClick}
             className={`group flex items-center gap-3.5 rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-2xs transition hover:shadow-card dark:border-slate-800 dark:bg-[#0F172A] ${act.border}`}
           >

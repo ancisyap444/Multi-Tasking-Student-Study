@@ -4,8 +4,6 @@ import {
   ChevronRight,
   Plus,
   Sparkles,
-  Calendar as CalendarIcon,
-  Filter,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { EventType } from '@/types/database.types';
@@ -48,7 +46,6 @@ export const CalendarToolbar: React.FC<CalendarToolbarProps> = ({
 
   return (
     <div className="flex flex-col gap-4 border-b border-slate-200/80 bg-white/50 p-4 backdrop-blur-xs lg:flex-row lg:items-center lg:justify-between dark:border-slate-800 dark:bg-[#0F172A]/50">
-      {/* Date Navigation & Month Title */}
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-2xs dark:border-slate-700 dark:bg-slate-800">
           <button
@@ -78,7 +75,6 @@ export const CalendarToolbar: React.FC<CalendarToolbarProps> = ({
         </h3>
       </div>
 
-      {/* Center: Category Filter Pills */}
       <div className="flex items-center gap-1 overflow-x-auto pb-1 lg:pb-0">
         {categoryTabs.map((cat) => (
           <button
@@ -96,9 +92,7 @@ export const CalendarToolbar: React.FC<CalendarToolbarProps> = ({
         ))}
       </div>
 
-      {/* Right: View Mode Toggle & CTAs */}
       <div className="flex items-center gap-2">
-        {/* View switcher: Week / Day / Month */}
         <div className="flex rounded-xl border border-slate-200 bg-slate-100/70 p-1 dark:border-slate-800 dark:bg-slate-900">
           {(['week', 'day', 'month'] as CalendarViewMode[]).map((mode) => (
             <button
@@ -116,7 +110,6 @@ export const CalendarToolbar: React.FC<CalendarToolbarProps> = ({
           ))}
         </div>
 
-        {/* Smart Auto-Schedule Button */}
         <button
           onClick={onOpenAutoSchedule}
           className="flex items-center gap-1.5 rounded-xl border border-purple-200 bg-purple-50 px-3 py-2 text-xs font-semibold text-purple-700 shadow-2xs transition hover:bg-purple-100 dark:border-purple-800/60 dark:bg-purple-950/40 dark:text-purple-300 dark:hover:bg-purple-900/60"
@@ -126,7 +119,6 @@ export const CalendarToolbar: React.FC<CalendarToolbarProps> = ({
           <span className="hidden sm:inline">Auto-Schedule</span>
         </button>
 
-        {/* + Create Event Button */}
         <button
           onClick={onOpenAddEvent}
           className="flex items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm shadow-blue-500/20 transition hover:bg-blue-700 active:scale-95"

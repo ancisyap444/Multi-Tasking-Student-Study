@@ -2,31 +2,36 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/context/AuthContext';
 import { TaskItem, TaskStatus, Subject } from '@/types/database.types';
-import { mockTasks } from '@/lib/mockData';
 
 const LOCAL_STORAGE_KEY = 'quicksuite_demo_tasks';
+
+function getStoredTasks(): TaskItem[] {
+  const cached = localStorage.getItem(LOCAL_STORAGE_KEY);
+  if (cached) {
+    try {
+      return JSON.parse(cached);
+    } catch {
+      return [];
+    }
+  }
+  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify([]));
+  return [];
+}
+
+function saveStoredTasks(tasks: TaskItem[]): void {
+  const unhydrated = tasks.map(({ subject: _subject, ...rest }) => rest as TaskItem);
+  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(unhydrated));
+}
 
 export function useTasks(subjects: Subject[] = []) {
   const { user, isDemo, isConfigured } = useAuth();
   const queryClient = useQueryClient();
 
   const tasksQuery = useQuery({
-    queryKey: ['tasks', user?.id, isDemo, subjects.length],
+    queryKey: ['tasks', user?.id, isDemo, subjects],
     queryFn: async (): Promise<TaskItem[]> => {
       if (isDemo || !isConfigured || !user) {
-        const cached = localStorage.getItem(LOCAL_STORAGE_KEY);
-        let items: TaskItem[];
-        if (cached) {
-          try {
-            items = JSON.parse(cached);
-          } catch {
-            items = mockTasks;
-          }
-        } else {
-          items = mockTasks;
-          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(items));
-        }
-
+        const items = getStoredTasks();
         return items.map((task) => ({
           ...task,
           subject: subjects.find((s) => s.id === task.subject_id),
@@ -53,9 +58,8 @@ export function useTasks(subjects: Subject[] = []) {
           created_at: new Date().toISOString(),
           subject: subjects.find((s) => s.id === newTask.subject_id),
         };
-        const current = tasksQuery.data || [];
-        const updated = [item, ...current];
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
+        const current = getStoredTasks();
+        saveStoredTasks([item, ...current]);
         return item;
       }
 
@@ -76,9 +80,9 @@ export function useTasks(subjects: Subject[] = []) {
   const updateTaskStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: TaskStatus }) => {
       if (isDemo || !isConfigured || !user) {
-        const current = tasksQuery.data || [];
+        const current = getStoredTasks();
         const updated = current.map((t) => (t.id === id ? { ...t, status } : t));
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
+        saveStoredTasks(updated);
         return { id, status };
       }
 
@@ -98,9 +102,9 @@ export function useTasks(subjects: Subject[] = []) {
   const updateTaskMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<TaskItem> }) => {
       if (isDemo || !isConfigured || !user) {
-        const current = tasksQuery.data || [];
+        const current = getStoredTasks();
         const updated = current.map((t) => (t.id === id ? { ...t, ...updates } : t));
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
+        saveStoredTasks(updated);
         return { id, updates };
       }
 
@@ -120,9 +124,9 @@ export function useTasks(subjects: Subject[] = []) {
   const deleteTaskMutation = useMutation({
     mutationFn: async (id: string) => {
       if (isDemo || !isConfigured || !user) {
-        const current = tasksQuery.data || [];
+        const current = getStoredTasks();
         const updated = current.filter((t) => t.id !== id);
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
+        saveStoredTasks(updated);
         return id;
       }
 

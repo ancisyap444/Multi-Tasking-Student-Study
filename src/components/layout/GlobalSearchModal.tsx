@@ -66,7 +66,6 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-slate-900/40 backdrop-blur-sm pt-20 p-4">
       <div className="w-full max-w-xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl transition-all dark:border-slate-800 dark:bg-[#0F172A]">
-        {/* Search Header */}
         <div className="flex items-center border-b border-slate-100 px-4 dark:border-slate-800">
           <Search className="h-5 w-5 text-slate-400" />
           <input
@@ -85,9 +84,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
           </button>
         </div>
 
-        {/* Results List */}
         <div className="max-h-96 overflow-y-auto p-2 space-y-4">
-          {/* Quick Navigations */}
           {!query && (
             <div className="p-2">
               <span className="text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
@@ -119,7 +116,6 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
             </div>
           )}
 
-          {/* Subjects */}
           {filteredSubjects.length > 0 && (
             <div>
               <span className="px-2 text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
@@ -149,7 +145,6 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
             </div>
           )}
 
-          {/* Tasks */}
           {filteredTasks.length > 0 && (
             <div>
               <span className="px-2 text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
@@ -178,7 +173,6 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
             </div>
           )}
 
-          {/* Documents */}
           {filteredDocs.length > 0 && (
             <div>
               <span className="px-2 text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
@@ -215,7 +209,6 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
             )}
         </div>
 
-        {/* Footer */}
         <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50/50 px-4 py-2.5 text-[11px] text-slate-400 dark:border-slate-800 dark:bg-slate-900/50">
           <span>Multi-Tasking Global Search</span>
           <div className="flex items-center gap-1">

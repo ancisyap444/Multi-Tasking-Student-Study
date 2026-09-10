@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { X, Plus, Trash2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Trash2 } from 'lucide-react';
 import { addDays, format } from 'date-fns';
 import { Subject, ProjectItem, ProjectMilestone } from '@/types/database.types';
+import { useAuth } from '@/context/AuthContext';
 
 interface AddProjectModalProps {
   isOpen: boolean;
@@ -16,11 +17,19 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
   subjects,
   onAddProject,
 }) => {
+  const { profile } = useAuth();
+  const studentName = profile?.full_name || 'Alex River';
   const [title, setTitle] = useState('');
   const [subjectId, setSubjectId] = useState(subjects[0]?.id || '');
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState(format(addDays(new Date(), 30), 'yyyy-MM-dd'));
-  const [teamMembersInput, setTeamMembersInput] = useState('Alex River');
+  const [teamMembersInput, setTeamMembersInput] = useState(studentName);
+
+  useEffect(() => {
+    if (isOpen) {
+      setTeamMembersInput(profile?.full_name || 'Alex River');
+    }
+  }, [isOpen, profile]);
   const [milestones, setMilestones] = useState<{ title: string; due_date: string }[]>([
     { title: 'Project Proposal & Architecture Spec', due_date: format(addDays(new Date(), 7), 'yyyy-MM-dd') },
     { title: 'Alpha Release Prototype', due_date: format(addDays(new Date(), 20), 'yyyy-MM-dd') },
@@ -52,20 +61,26 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
         .map((m) => m.trim())
         .filter(Boolean);
 
-      const formattedMilestones: ProjectMilestone[] = milestones.map((m, i) => ({
-        id: `m-${Date.now()}-${i}`,
-        title: m.title,
-        due_date: new Date(m.due_date).toISOString(),
-        completed: false,
-      }));
+      const formattedMilestones: ProjectMilestone[] = milestones.map((m, i) => {
+        const parsedMDate = new Date(m.due_date);
+        return {
+          id: `m-${Date.now()}-${i}`,
+          title: m.title,
+          due_date: !isNaN(parsedMDate.getTime()) ? parsedMDate.toISOString() : new Date().toISOString(),
+          completed: false,
+        };
+      });
+
+      const parsedDueDate = new Date(dueDate);
+      const isoDueDate = !isNaN(parsedDueDate.getTime()) ? parsedDueDate.toISOString() : new Date().toISOString();
 
       await onAddProject({
         title: title.trim(),
         subject_id: subjectId || undefined,
         description: description.trim() || undefined,
         progress: 0,
-        due_date: new Date(dueDate).toISOString(),
-        team_members: team.length > 0 ? team : ['Alex River'],
+        due_date: isoDueDate,
+        team_members: team.length > 0 ? team : [studentName],
         milestones: formattedMilestones,
       });
 
@@ -172,7 +187,6 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
             />
           </div>
 
-          {/* Milestones List */}
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
               Milestones ({milestones.length})
@@ -181,7 +195,7 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
             <div className="space-y-2 max-h-36 overflow-y-auto">
               {milestones.map((m, idx) => (
                 <div
-                  key={idx}
+                  key={`${m.title}-${idx}`}
                   className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-2 text-xs dark:border-slate-800 dark:bg-slate-900/40"
                 >
                   <span className="font-medium text-slate-800 dark:text-slate-200">{m.title}</span>

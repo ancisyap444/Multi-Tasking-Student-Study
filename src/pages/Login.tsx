@@ -39,7 +39,6 @@ export const Login: React.FC<LoginProps> = ({ onGoToSignup, onGoToForgotPassword
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-[#F8FAFC] p-4 dark:bg-[#0B0F19]">
       <div className="w-full max-w-md overflow-hidden rounded-3xl border border-slate-200 bg-white p-8 shadow-2xl dark:border-slate-800 dark:bg-[#0F172A]">
-        {/* Brand Header */}
         <div className="flex flex-col items-center text-center">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-500/30">
             <BookOpen className="h-6 w-6" />
@@ -52,7 +51,6 @@ export const Login: React.FC<LoginProps> = ({ onGoToSignup, onGoToForgotPassword
           </p>
         </div>
 
-        {/* Demo Mode Instant Access Banner */}
         <div className="mt-6 rounded-2xl border border-purple-200/80 bg-purple-50/70 p-3.5 text-center dark:border-purple-900/50 dark:bg-purple-950/30">
           <p className="text-xs font-semibold text-purple-900 dark:text-purple-200 flex items-center justify-center gap-1.5">
             <Sparkles className="h-3.5 w-3.5 text-purple-600" />

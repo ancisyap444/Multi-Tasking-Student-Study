@@ -28,7 +28,6 @@ export const WeeklyGrid: React.FC<WeeklyGridProps> = ({
 }) => {
   const weekDays = useMemo(() => getWeekDays(currentDate), [currentDate]);
 
-  // Generate 8:00 AM to 8:00 PM hours (12 slots)
   const hourSlots = useMemo(() => {
     const slots = [];
     for (let h = CALENDAR_START_HOUR; h <= CALENDAR_END_HOUR; h++) {
@@ -37,7 +36,6 @@ export const WeeklyGrid: React.FC<WeeklyGridProps> = ({
     return slots;
   }, []);
 
-  // Filter events based on active category & subject filter
   const filteredEvents = useMemo(() => {
     return events.filter((e) => {
       const matchCategory = selectedCategory === 'all' || e.type === selectedCategory;
@@ -50,9 +48,7 @@ export const WeeklyGrid: React.FC<WeeklyGridProps> = ({
 
   return (
     <div className="flex flex-1 flex-col overflow-x-auto select-none">
-      {/* Week Header: Mon - Sun */}
       <div className="sticky top-0 z-30 grid grid-cols-[70px_repeat(7,minmax(130px,1fr))] border-b border-slate-200 bg-white/95 backdrop-blur-md dark:border-slate-800 dark:bg-[#0F172A]/95">
-        {/* Empty corner cell for timezone/hour header */}
         <div className="flex items-center justify-center border-r border-slate-100 p-2 text-[10px] font-semibold text-slate-400 dark:border-slate-800">
           TIME
         </div>
@@ -85,23 +81,25 @@ export const WeeklyGrid: React.FC<WeeklyGridProps> = ({
         })}
       </div>
 
-      {/* Timetable Body (8 AM - 8 PM) */}
       <div className="relative grid flex-1 grid-cols-[70px_repeat(7,minmax(130px,1fr))] overflow-y-auto">
-        {/* Left Hours Column */}
         <div className="relative border-r border-slate-100 bg-slate-50/40 dark:border-slate-800 dark:bg-slate-900/20">
-          {hourSlots.map((hour) => (
+          {hourSlots.map((hour, index) => (
             <div
               key={hour}
               className="relative h-16 border-b border-slate-100 pr-2 text-right text-[11px] font-medium text-slate-400 dark:border-slate-800/80 dark:text-slate-400"
             >
-              <span className="-top-2.5 relative block">
+              <span
+                className={cn(
+                  'relative block',
+                  index === 0 ? 'top-1' : '-top-2.5'
+                )}
+              >
                 {formatHourLabel(hour)}
               </span>
             </div>
           ))}
         </div>
 
-        {/* 7 Days Columns */}
         {weekDays.map((day) => {
           const today = isToday(day);
           const dayEvents = filteredEvents.filter((e) => {
@@ -120,7 +118,6 @@ export const WeeklyGrid: React.FC<WeeklyGridProps> = ({
                 today && 'bg-blue-50/20 dark:bg-blue-950/10'
               )}
             >
-              {/* Hour Grid Lines */}
               {hourSlots.map((hour) => (
                 <div
                   key={hour}
@@ -128,7 +125,6 @@ export const WeeklyGrid: React.FC<WeeklyGridProps> = ({
                 />
               ))}
 
-              {/* Current Time Indicator Line (shown only on today) */}
               {today && currentTimeTop !== null && (
                 <div
                   style={{ top: `${currentTimeTop}%` }}
@@ -139,7 +135,6 @@ export const WeeklyGrid: React.FC<WeeklyGridProps> = ({
                 </div>
               )}
 
-              {/* Events positioned in column */}
               <div className="absolute inset-0 p-1">
                 {dayEvents.map((event) => (
                   <EventCard

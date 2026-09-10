@@ -1,12 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Kanban,
   List,
   Plus,
-  Filter,
-  CheckSquare,
   Search,
-  Sparkles,
 } from 'lucide-react';
 import { TaskKanban } from '@/components/tasks/TaskKanban';
 import { TaskList } from '@/components/tasks/TaskList';
@@ -60,15 +57,17 @@ export const TasksPage: React.FC<TasksPageProps> = ({
   const [autoScheduleTargetTask, setAutoScheduleTargetTask] = useState<TaskItem | null>(null);
   const [isAutoScheduleOpen, setIsAutoScheduleOpen] = useState(false);
 
-  // Filter tasks based on subject filter, priority, and search
-  const filteredTasks = tasks.filter((t) => {
-    const matchSubject = !selectedSubjectFilter || t.subject_id === selectedSubjectFilter;
-    const matchPriority = selectedPriority === 'all' || t.priority === selectedPriority;
-    const matchSearch =
-      t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.notes?.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchSubject && matchPriority && matchSearch;
-  });
+  const filteredTasks = useMemo(() => {
+    return tasks.filter((t) => {
+      const matchSubject = !selectedSubjectFilter || t.subject_id === selectedSubjectFilter;
+      const matchPriority = selectedPriority === 'all' || t.priority === selectedPriority;
+      const matchSearch =
+        !searchQuery ||
+        t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        Boolean(t.notes?.toLowerCase().includes(searchQuery.toLowerCase()));
+      return matchSubject && matchPriority && matchSearch;
+    });
+  }, [tasks, selectedSubjectFilter, selectedPriority, searchQuery]);
 
   const handleOpenTask = (task: TaskItem) => {
     setSelectedTask(task);
@@ -87,14 +86,12 @@ export const TasksPage: React.FC<TasksPageProps> = ({
 
   return (
     <div className="flex flex-1 flex-col h-full overflow-hidden bg-[#F8FAFC] dark:bg-[#0B0F19]">
-      {/* Top Toolbar */}
       <div className="flex flex-col gap-3 border-b border-slate-200/80 bg-white/60 p-4 backdrop-blur-xs md:flex-row md:items-center md:justify-between dark:border-slate-800 dark:bg-[#0F172A]/60">
         <div className="flex items-center gap-3">
           <h2 className="text-base font-bold text-slate-900 dark:text-white">
             Assignments & Tasks ({filteredTasks.length})
           </h2>
 
-          {/* Dual View Mode Toggle */}
           <div className="flex rounded-xl border border-slate-200 bg-slate-100/70 p-1 dark:border-slate-800 dark:bg-slate-900">
             <button
               onClick={() => setViewMode('kanban')}
@@ -123,7 +120,6 @@ export const TasksPage: React.FC<TasksPageProps> = ({
           </div>
         </div>
 
-        {/* Search & Priority Filter & Add CTA */}
         <div className="flex items-center gap-2 flex-wrap">
           <div className="relative">
             <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-slate-400" />
@@ -163,7 +159,6 @@ export const TasksPage: React.FC<TasksPageProps> = ({
         </div>
       </div>
 
-      {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto">
         {viewMode === 'kanban' ? (
           <TaskKanban
@@ -183,7 +178,6 @@ export const TasksPage: React.FC<TasksPageProps> = ({
         )}
       </div>
 
-      {/* Task Detail Drawer */}
       <TaskDetailDrawer
         task={selectedTask}
         isOpen={isDrawerOpen}
@@ -197,7 +191,6 @@ export const TasksPage: React.FC<TasksPageProps> = ({
         onAutoSchedule={handleTriggerAutoSchedule}
       />
 
-      {/* Add Task Modal */}
       <AddTaskModal
         isOpen={isAddTaskOpen}
         onClose={onCloseAddTask}
@@ -205,7 +198,6 @@ export const TasksPage: React.FC<TasksPageProps> = ({
         onAddTask={onAddTask}
       />
 
-      {/* Auto-Schedule Modal */}
       <AutoStudyModal
         isOpen={isAutoScheduleOpen}
         onClose={() => {

@@ -1,30 +1,38 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/context/AuthContext';
 import { ProjectItem, Subject } from '@/types/database.types';
-import { mockProjects } from '@/lib/mockData';
 
-const LOCAL_STORAGE_KEY = 'quicksuite_demo_projects';
+const LOCAL_STORAGE_KEY = 'quicksuite_projects';
+
+function getStoredProjects(): ProjectItem[] {
+  if (localStorage.getItem('quicksuite_demo_projects')) {
+    localStorage.removeItem('quicksuite_demo_projects');
+  }
+
+  const cached = localStorage.getItem(LOCAL_STORAGE_KEY);
+  if (cached) {
+    try {
+      return JSON.parse(cached);
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+function saveStoredProjects(projects: ProjectItem[]): void {
+  const unhydrated = projects.map(({ subject: _subject, ...rest }) => rest as ProjectItem);
+  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(unhydrated));
+}
 
 export function useProjects(subjects: Subject[] = []) {
   const { user, isDemo } = useAuth();
   const queryClient = useQueryClient();
 
   const projectsQuery = useQuery({
-    queryKey: ['projects', user?.id, isDemo, subjects.length],
+    queryKey: ['projects', user?.id, isDemo, subjects],
     queryFn: async (): Promise<ProjectItem[]> => {
-      const cached = localStorage.getItem(LOCAL_STORAGE_KEY);
-      let items: ProjectItem[];
-      if (cached) {
-        try {
-          items = JSON.parse(cached);
-        } catch {
-          items = mockProjects;
-        }
-      } else {
-        items = mockProjects;
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(items));
-      }
-
+      const items = getStoredProjects();
       return items.map((proj) => ({
         ...proj,
         subject: subjects.find((s) => s.id === proj.subject_id),
@@ -41,9 +49,8 @@ export function useProjects(subjects: Subject[] = []) {
         created_at: new Date().toISOString(),
         subject: subjects.find((s) => s.id === newProj.subject_id),
       };
-      const current = projectsQuery.data || [];
-      const updated = [item, ...current];
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
+      const current = getStoredProjects();
+      saveStoredProjects([item, ...current]);
       return item;
     },
     onSuccess: () => {
@@ -53,7 +60,7 @@ export function useProjects(subjects: Subject[] = []) {
 
   const toggleMilestoneMutation = useMutation({
     mutationFn: async ({ projectId, milestoneId }: { projectId: string; milestoneId: string }) => {
-      const current = projectsQuery.data || [];
+      const current = getStoredProjects();
       const updated = current.map((p) => {
         if (p.id !== projectId) return p;
         const newMilestones = p.milestones.map((m) =>
@@ -63,8 +70,20 @@ export function useProjects(subjects: Subject[] = []) {
         const progress = newMilestones.length > 0 ? Math.round((completedCount / newMilestones.length) * 100) : p.progress;
         return { ...p, milestones: newMilestones, progress };
       });
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
+      saveStoredProjects(updated);
       return { projectId, milestoneId };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+    },
+  });
+
+  const deleteProjectMutation = useMutation({
+    mutationFn: async (projectId: string) => {
+      const current = getStoredProjects();
+      const updated = current.filter((p) => p.id !== projectId);
+      saveStoredProjects(updated);
+      return projectId;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
@@ -75,6 +94,7 @@ export function useProjects(subjects: Subject[] = []) {
     projects: projectsQuery.data || [],
     isLoading: projectsQuery.isLoading,
     addProject: addProjectMutation.mutateAsync,
+    deleteProject: deleteProjectMutation.mutateAsync,
     toggleMilestone: toggleMilestoneMutation.mutateAsync,
   };
 }

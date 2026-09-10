@@ -1,5 +1,5 @@
 import React from 'react';
-import { Clock, MapPin, Trash2, BookOpen, Sparkles } from 'lucide-react';
+import { Clock, MapPin, Trash2, Sparkles } from 'lucide-react';
 import { CalendarEvent, EventType } from '@/types/database.types';
 import { formatEventTimeRange, calculateEventPosition } from '@/utils/dateUtils';
 import { cn } from '@/lib/utils';
@@ -117,7 +117,6 @@ export const EventCard: React.FC<EventCardProps> = ({
     );
   }
 
-  // Absolute positioning mode for Weekly Timetable Grid
   const { topPct, heightPct } = calculateEventPosition(event.start_time, event.end_time);
 
   return (

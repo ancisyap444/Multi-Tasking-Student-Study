@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Sparkles, Plus, Clock } from 'lucide-react';
+import { X, Sparkles } from 'lucide-react';
 import { addDays, format } from 'date-fns';
 import { Subject, TaskItem, TaskPriority, TaskType } from '@/types/database.types';
 
@@ -37,6 +37,14 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
     e.preventDefault();
     if (!title.trim()) return;
 
+    let isoDue: string | undefined = undefined;
+    if (dueAt) {
+      const parsed = new Date(dueAt);
+      if (!isNaN(parsed.getTime())) {
+        isoDue = parsed.toISOString();
+      }
+    }
+
     setIsSubmitting(true);
     try {
       await onAddTask(
@@ -44,7 +52,7 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
           title: title.trim(),
           subject_id: subjectId || undefined,
           notes: notes.trim() || undefined,
-          due_at: dueAt ? new Date(dueAt).toISOString() : undefined,
+          due_at: isoDue,
           priority,
           status: 'todo',
           task_type: taskType,
@@ -187,7 +195,6 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
             </div>
           </div>
 
-          {/* Auto-schedule toggle */}
           <div className="rounded-xl border border-purple-200/80 bg-purple-50/50 p-3 dark:border-purple-900/50 dark:bg-purple-950/20">
             <label className="flex items-center gap-2 cursor-pointer">
               <input

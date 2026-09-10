@@ -1,8 +1,8 @@
-import React, { useState, useMemo } from 'react';
-import { Sparkles, Calendar, Clock, Check, X, ArrowRight, BookOpen } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Sparkles, Check, X } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { TaskItem, CalendarEvent } from '@/types/database.types';
-import { generateAutoStudyBlocks, ProposedStudyBlock } from '@/utils/studyBlockScheduler';
+import { generateAutoStudyBlocks } from '@/utils/studyBlockScheduler';
 
 interface AutoStudyModalProps {
   isOpen: boolean;
@@ -21,22 +21,24 @@ export const AutoStudyModal: React.FC<AutoStudyModalProps> = ({
   events,
   onAddMultipleEvents,
 }) => {
-  // Only non-done tasks with due dates
   const eligibleTasks = useMemo(() => {
     return tasks.filter((t) => t.status !== 'done' && Boolean(t.due_at));
   }, [tasks]);
 
-  const [selectedTaskId, setSelectedTaskId] = useState<string>(
-    eligibleTasks[0]?.id || ''
-  );
+  const [selectedTaskId, setSelectedTaskId] = useState<string>('');
   const [preferredDuration, setPreferredDuration] = useState<number>(90);
   const [isInserting, setIsInserting] = useState(false);
+
+  useEffect(() => {
+    if ((!selectedTaskId || !eligibleTasks.some((t) => t.id === selectedTaskId)) && eligibleTasks.length > 0) {
+      setSelectedTaskId(eligibleTasks[0].id);
+    }
+  }, [eligibleTasks, selectedTaskId]);
 
   const selectedTask = useMemo(() => {
     return eligibleTasks.find((t) => t.id === selectedTaskId);
   }, [eligibleTasks, selectedTaskId]);
 
-  // Compute proposed study blocks
   const proposedBlocks = useMemo(() => {
     if (!selectedTask) return [];
     return generateAutoStudyBlocks(selectedTask, events, preferredDuration);
@@ -72,7 +74,6 @@ export const AutoStudyModal: React.FC<AutoStudyModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
       <div className="w-full max-w-xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-[#0F172A]">
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
           <div className="flex items-center gap-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-100 text-purple-600 dark:bg-purple-950/60 dark:text-purple-400">
@@ -95,7 +96,6 @@ export const AutoStudyModal: React.FC<AutoStudyModalProps> = ({
           </button>
         </div>
 
-        {/* Task Selection */}
         <div className="mt-4 space-y-4">
           <div>
             <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
@@ -149,7 +149,6 @@ export const AutoStudyModal: React.FC<AutoStudyModalProps> = ({
             </div>
           </div>
 
-          {/* Generated Proposals Preview */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
@@ -199,7 +198,6 @@ export const AutoStudyModal: React.FC<AutoStudyModalProps> = ({
             </div>
           </div>
 
-          {/* Footer Actions */}
           <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
             <button
               type="button"

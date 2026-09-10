@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BookOpen, User, Mail, Lock, GraduationCap, AlertCircle, ArrowLeft } from 'lucide-react';
+import { User, Mail, Lock, GraduationCap, AlertCircle, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { AcademicYear } from '@/types/database.types';
 

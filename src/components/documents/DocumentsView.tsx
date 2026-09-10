@@ -2,12 +2,7 @@ import React, { useState } from 'react';
 import {
   FileText,
   Upload,
-  Download,
   Trash2,
-  BookOpen,
-  Calendar,
-  Sparkles,
-  ExternalLink,
   Search,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
@@ -15,14 +10,13 @@ import { DocumentItem, Subject } from '@/types/database.types';
 
 interface DocumentsViewProps {
   documents: DocumentItem[];
-  subjects: Subject[];
+  subjects?: Subject[];
   onDeleteDocument: (doc: DocumentItem) => Promise<any>;
   onOpenUpload: () => void;
 }
 
 export const DocumentsView: React.FC<DocumentsViewProps> = ({
   documents,
-  subjects,
   onDeleteDocument,
   onOpenUpload,
 }) => {
@@ -41,9 +35,16 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
+  const formatDocDate = (dateStr: string) => {
+    try {
+      return format(parseISO(dateStr), 'MMM d, yyyy');
+    } catch {
+      return '';
+    }
+  };
+
   return (
     <div className="flex-1 overflow-y-auto p-6 space-y-6">
-      {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-xl font-extrabold text-slate-900 tracking-tight dark:text-white">
@@ -63,7 +64,6 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({
         </button>
       </div>
 
-      {/* Filter Toolbar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="relative max-w-sm flex-1">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
@@ -93,7 +93,6 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({
         </div>
       </div>
 
-      {/* Documents Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredDocs.map((doc) => (
           <div
@@ -132,7 +131,7 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({
 
             <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-[11px] text-slate-400 dark:border-slate-850">
               <span>{formatFileSize(doc.file_size)}</span>
-              <span>{format(parseISO(doc.created_at), 'MMM d, yyyy')}</span>
+              <span>{formatDocDate(doc.created_at)}</span>
             </div>
           </div>
         ))}

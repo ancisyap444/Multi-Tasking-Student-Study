@@ -2,31 +2,36 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/context/AuthContext';
 import { DocumentItem, Subject } from '@/types/database.types';
-import { mockDocuments } from '@/lib/mockData';
 
 const LOCAL_STORAGE_KEY = 'quicksuite_demo_documents';
+
+function getStoredDocuments(): DocumentItem[] {
+  const cached = localStorage.getItem(LOCAL_STORAGE_KEY);
+  if (cached) {
+    try {
+      return JSON.parse(cached);
+    } catch {
+      return [];
+    }
+  }
+  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify([]));
+  return [];
+}
+
+function saveStoredDocuments(documents: DocumentItem[]): void {
+  const unhydrated = documents.map(({ subject: _subject, ...rest }) => rest as DocumentItem);
+  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(unhydrated));
+}
 
 export function useDocuments(subjects: Subject[] = []) {
   const { user, isDemo, isConfigured } = useAuth();
   const queryClient = useQueryClient();
 
   const documentsQuery = useQuery({
-    queryKey: ['documents', user?.id, isDemo, subjects.length],
+    queryKey: ['documents', user?.id, isDemo, subjects],
     queryFn: async (): Promise<DocumentItem[]> => {
       if (isDemo || !isConfigured || !user) {
-        const cached = localStorage.getItem(LOCAL_STORAGE_KEY);
-        let items: DocumentItem[];
-        if (cached) {
-          try {
-            items = JSON.parse(cached);
-          } catch {
-            items = mockDocuments;
-          }
-        } else {
-          items = mockDocuments;
-          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(items));
-        }
-
+        const items = getStoredDocuments();
         return items.map((doc) => ({
           ...doc,
           subject: subjects.find((s) => s.id === doc.subject_id),
@@ -68,9 +73,8 @@ export function useDocuments(subjects: Subject[] = []) {
           created_at: new Date().toISOString(),
           subject: subjects.find((s) => s.id === subjectId),
         };
-        const current = documentsQuery.data || [];
-        const updated = [item, ...current];
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
+        const current = getStoredDocuments();
+        saveStoredDocuments([item, ...current]);
         return item;
       }
 
@@ -117,9 +121,9 @@ export function useDocuments(subjects: Subject[] = []) {
   const deleteDocumentMutation = useMutation({
     mutationFn: async (doc: DocumentItem) => {
       if (isDemo || !isConfigured || !user) {
-        const current = documentsQuery.data || [];
+        const current = getStoredDocuments();
         const updated = current.filter((d) => d.id !== doc.id);
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
+        saveStoredDocuments(updated);
         return doc.id;
       }
 

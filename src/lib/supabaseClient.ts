@@ -13,8 +13,6 @@ export const isSupabaseConfigured = (): boolean => {
   );
 };
 
-// If valid credentials are present, initialize the live Supabase client.
-// Otherwise, create a mock-safe instance to prevent runtime initialization crashes.
 export const supabase: SupabaseClient = isSupabaseConfigured()
   ? createClient(supabaseUrl, supabaseAnonKey, {
       auth: {

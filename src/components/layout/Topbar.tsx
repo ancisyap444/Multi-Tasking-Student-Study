@@ -7,32 +7,40 @@ import {
   Moon,
   LogOut,
   Settings,
-  Sparkles,
-  GraduationCap,
+  BookOpen,
+  LayoutDashboard,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
+import { getCurrentSemester } from '@/utils/dateUtils';
 
 interface TopbarProps {
   onOpenSearch: () => void;
   onOpenCreateEvent: () => void;
-  onOpenSettings: () => void;
+  onOpenSettings: (tab?: 'appearance' | 'account' | 'shortcuts') => void;
+  onGoToDashboard?: () => void;
 }
 
 export const Topbar: React.FC<TopbarProps> = ({
   onOpenSearch,
   onOpenCreateEvent,
   onOpenSettings,
+  onGoToDashboard,
 }) => {
-  const { profile, signOut, isDemo, isConfigured } = useAuth();
+  const { profile, signOut } = useAuth();
   const { isDark, setMode } = useTheme();
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const notifRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setProfileDropdownOpen(false);
+      }
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setNotificationsOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -40,8 +48,7 @@ export const Topbar: React.FC<TopbarProps> = ({
   }, []);
 
   return (
-    <header className="flex h-16 w-full items-center justify-between border-b border-slate-200/80 bg-white/80 px-6 backdrop-blur-md dark:border-slate-800 dark:bg-[#0F172A]/80">
-      {/* Global Search Bar (Trigger for GlobalSearchModal) */}
+    <header className="relative z-40 flex h-16 w-full items-center justify-between border-b border-slate-200/80 bg-white/80 px-4 sm:px-6 backdrop-blur-md dark:border-slate-800 dark:bg-[#0F172A]/80">
       <div className="flex flex-1 items-center max-w-md">
         <button
           onClick={onOpenSearch}
@@ -62,15 +69,16 @@ export const Topbar: React.FC<TopbarProps> = ({
         </button>
       </div>
 
-      {/* Right Controls */}
       <div className="flex items-center gap-3">
-        {/* Active Semester Pill */}
-        <div className="hidden items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50/80 px-3 py-1 text-xs font-medium text-blue-700 sm:flex dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-300">
-          <GraduationCap className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-          <span>Spring 2025 Semester</span>
-        </div>
+        <button
+          onClick={onGoToDashboard}
+          title="Multi-Tasking — Go to Dashboard"
+          className="hidden items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50/80 px-3 py-1 text-xs font-medium text-blue-700 transition hover:bg-blue-100 hover:border-blue-300 active:scale-95 sm:flex dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-300 dark:hover:bg-blue-900/60"
+        >
+          <BookOpen className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+          <span>{getCurrentSemester()}</span>
+        </button>
 
-        {/* Primary Quick CTA: + Create */}
         <button
           onClick={onOpenCreateEvent}
           className="flex items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm shadow-blue-500/20 transition hover:bg-blue-700 active:scale-95 dark:bg-blue-600 dark:hover:bg-blue-500"
@@ -79,7 +87,6 @@ export const Topbar: React.FC<TopbarProps> = ({
           <span className="hidden sm:inline">Create</span>
         </button>
 
-        {/* Theme Toggle Button */}
         <button
           onClick={() => setMode(isDark ? 'light' : 'dark')}
           aria-label="Toggle theme"
@@ -88,16 +95,31 @@ export const Topbar: React.FC<TopbarProps> = ({
           {isDark ? <Sun className="h-4 w-4 text-amber-400" /> : <Moon className="h-4 w-4 text-slate-600" />}
         </button>
 
-        {/* Notification Bell */}
-        <button
-          onClick={onOpenSettings}
-          className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
-        >
-          <Bell className="h-4 w-4" />
-          <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white dark:ring-slate-900" />
-        </button>
+        <div className="relative" ref={notifRef}>
+          <button
+            onClick={() => setNotificationsOpen((prev) => !prev)}
+            title="Notifications"
+            className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+          >
+            <Bell className="h-4 w-4" />
+          </button>
 
-        {/* Student Profile Avatar & Dropdown */}
+          {notificationsOpen && (
+            <div className="absolute right-0 mt-2 w-72 origin-top-right rounded-2xl border border-slate-200 bg-white p-3 shadow-2xl z-50 dark:border-slate-800 dark:bg-[#0F172A]">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2 dark:border-slate-800">
+                <span className="text-xs font-bold text-slate-900 dark:text-white">Upcoming Alerts</span>
+              </div>
+              <div className="flex flex-col items-center justify-center gap-2 py-6 text-center">
+                <Bell className="h-7 w-7 text-slate-300 dark:text-slate-600" />
+                <p className="text-xs font-medium text-slate-500 dark:text-slate-400">No alerts yet</p>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                  Upcoming deadlines and events will appear here.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setProfileDropdownOpen((prev) => !prev)}
@@ -114,7 +136,7 @@ export const Topbar: React.FC<TopbarProps> = ({
           </button>
 
           {profileDropdownOpen && (
-            <div className="absolute right-0 mt-2 w-60 origin-top-right rounded-2xl border border-slate-200 bg-white p-2 shadow-elevated transition-all z-50 dark:border-slate-800 dark:bg-[#0F172A]">
+            <div className="absolute right-0 mt-2 w-64 origin-top-right rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl transition-all z-50 dark:border-slate-800 dark:bg-[#0F172A]">
               <div className="border-b border-slate-100 p-2 dark:border-slate-800">
                 <p className="text-sm font-semibold text-slate-900 dark:text-white">
                   {profile?.full_name || 'Alex River'}
@@ -128,12 +150,23 @@ export const Topbar: React.FC<TopbarProps> = ({
                 <button
                   onClick={() => {
                     setProfileDropdownOpen(false);
-                    onOpenSettings();
+                    onGoToDashboard?.();
+                  }}
+                  className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                >
+                  <LayoutDashboard className="h-4 w-4 text-slate-500" />
+                  <span>Dashboard Home</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setProfileDropdownOpen(false);
+                    onOpenSettings('account');
                   }}
                   className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
                 >
                   <Settings className="h-4 w-4 text-slate-500" />
-                  <span>Account & Appearance</span>
+                  <span>Customize Profile & Settings</span>
                 </button>
               </div>
 

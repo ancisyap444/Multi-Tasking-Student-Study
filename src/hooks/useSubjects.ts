@@ -2,9 +2,25 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/context/AuthContext';
 import { Subject } from '@/types/database.types';
-import { mockSubjects } from '@/lib/mockData';
 
 const LOCAL_STORAGE_KEY = 'quicksuite_demo_subjects';
+
+function getStoredSubjects(): Subject[] {
+  const cached = localStorage.getItem(LOCAL_STORAGE_KEY);
+  if (cached) {
+    try {
+      return JSON.parse(cached);
+    } catch {
+      return [];
+    }
+  }
+  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify([]));
+  return [];
+}
+
+function saveStoredSubjects(subjects: Subject[]): void {
+  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(subjects));
+}
 
 export function useSubjects() {
   const { user, isDemo, isConfigured } = useAuth();
@@ -14,16 +30,7 @@ export function useSubjects() {
     queryKey: ['subjects', user?.id, isDemo],
     queryFn: async (): Promise<Subject[]> => {
       if (isDemo || !isConfigured || !user) {
-        const cached = localStorage.getItem(LOCAL_STORAGE_KEY);
-        if (cached) {
-          try {
-            return JSON.parse(cached);
-          } catch {
-            // ignore
-          }
-        }
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(mockSubjects));
-        return mockSubjects;
+        return getStoredSubjects();
       }
 
       const { data, error } = await supabase
@@ -45,9 +52,8 @@ export function useSubjects() {
           user_id: user?.id || 'demo-student-uuid',
           created_at: new Date().toISOString(),
         };
-        const current = subjectsQuery.data || [];
-        const updated = [...current, item];
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
+        const current = getStoredSubjects();
+        saveStoredSubjects([...current, item]);
         return item;
       }
 
@@ -63,15 +69,16 @@ export function useSubjects() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['subjects'] });
       queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
     },
   });
 
   const deleteSubjectMutation = useMutation({
     mutationFn: async (id: string) => {
       if (isDemo || !isConfigured || !user) {
-        const current = subjectsQuery.data || [];
+        const current = getStoredSubjects();
         const updated = current.filter((s) => s.id !== id);
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
+        saveStoredSubjects(updated);
         return id;
       }
 
