@@ -63,9 +63,10 @@ export function useEvents(subjects: Subject[] = []) {
         return item;
       }
 
+      const { subject: _s, ...cleanEvent } = newEvent as any;
       const { data, error } = await supabase
         .from('events')
-        .insert([{ ...newEvent, user_id: user.id }])
+        .insert([{ ...cleanEvent, user_id: user.id }])
         .select('*, subject:subjects(*)')
         .single();
 
@@ -92,7 +93,7 @@ export function useEvents(subjects: Subject[] = []) {
         return items;
       }
 
-      const payload = newEvents.map((e) => ({ ...e, user_id: user.id }));
+      const payload = newEvents.map(({ subject: _s, ...e }: any) => ({ ...e, user_id: user.id }));
       const { data, error } = await supabase
         .from('events')
         .insert(payload)

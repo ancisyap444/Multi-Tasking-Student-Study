@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { BookOpen, Sparkles, ArrowRight, Lock, Mail, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { cn } from '@/lib/utils';
 
 interface LoginProps {
   onGoToSignup: () => void;
@@ -49,9 +50,30 @@ export const Login: React.FC<LoginProps> = ({ onGoToSignup, onGoToForgotPassword
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
             Student academic operating system & intelligent calendar
           </p>
+
+          <div className="mt-2.5 flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-medium border border-slate-200 dark:border-slate-700">
+            <span
+              className={cn(
+                'h-2 w-2 rounded-full',
+                isConfigured ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'
+              )}
+            />
+            <span className="text-slate-600 dark:text-slate-300">
+              {isConfigured ? 'Supabase Database Connected' : 'Offline / Demo Mode (No Env Vars)'}
+            </span>
+          </div>
         </div>
 
-        <div className="mt-6 rounded-2xl border border-purple-200/80 bg-purple-50/70 p-3.5 text-center dark:border-purple-900/50 dark:bg-purple-950/30">
+        {!isConfigured && (
+          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50/80 p-2.5 text-left text-xs text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300">
+            <p className="font-semibold">Vercel Setup Needed:</p>
+            <p className="text-[11px] mt-0.5 text-amber-700 dark:text-amber-400">
+              To record data to Supabase in production, add <code className="bg-amber-100 px-1 py-0.5 rounded text-[10px] dark:bg-amber-900">VITE_SUPABASE_URL</code> and <code className="bg-amber-100 px-1 py-0.5 rounded text-[10px] dark:bg-amber-900">VITE_SUPABASE_ANON_KEY</code> to your Vercel Project Settings &rarr; Environment Variables, then redeploy.
+            </p>
+          </div>
+        )}
+
+        <div className="mt-5 rounded-2xl border border-purple-200/80 bg-purple-50/70 p-3.5 text-center dark:border-purple-900/50 dark:bg-purple-950/30">
           <p className="text-xs font-semibold text-purple-900 dark:text-purple-200 flex items-center justify-center gap-1.5">
             <Sparkles className="h-3.5 w-3.5 text-purple-600" />
             Instant Preview Access

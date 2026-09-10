@@ -32,16 +32,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   const [user, setUser] = useState<User | null>(() => {
-    const isLoggedIn = localStorage.getItem('quicksuite_logged_in') === 'true';
-    if (isLoggedIn) {
-      return {
-        id: mockProfile.id,
-        email: 'alex.river@university.edu',
-        app_metadata: {},
-        user_metadata: { full_name: mockProfile.full_name },
-        aud: 'authenticated',
-        created_at: new Date().toISOString(),
-      } as unknown as User;
+    if (!isConfigured || localStorage.getItem('quicksuite_force_demo') === 'true') {
+      const isLoggedIn = localStorage.getItem('quicksuite_logged_in') === 'true';
+      if (isLoggedIn) {
+        return {
+          id: mockProfile.id,
+          email: 'alex.river@university.edu',
+          app_metadata: {},
+          user_metadata: { full_name: mockProfile.full_name },
+          aud: 'authenticated',
+          created_at: new Date().toISOString(),
+        } as unknown as User;
+      }
     }
     return null;
   });
@@ -65,15 +67,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
-      if (error) {
-        console.warn('Could not fetch profile from Supabase, using defaults:', error.message);
-        return;
-      }
       if (data) {
         setProfile(data as StudentProfile);
         localStorage.setItem('quicksuite_profile', JSON.stringify(data));
+      } else {
+        const { data: authData } = await supabase.auth.getUser();
+        const meta = authData?.user?.user_metadata;
+        const defaultProfile: StudentProfile = {
+          id: userId,
+          full_name: meta?.full_name || 'Student',
+          program: meta?.program || 'BS Computer Science',
+          year: (meta?.year as any) || 'Sophomore',
+          target_study_hours_week: 25,
+        };
+        await supabase.from('profiles').upsert([defaultProfile]);
+        setProfile(defaultProfile);
+        localStorage.setItem('quicksuite_profile', JSON.stringify(defaultProfile));
       }
     } catch (err) {
       console.error('Profile fetch error:', err);
@@ -81,7 +92,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   useEffect(() => {
-    if (isDemo || !isConfigured) {
+    if (!isConfigured || isDemo) {
       const isLoggedIn = localStorage.getItem('quicksuite_logged_in') === 'true';
       if (isLoggedIn) {
         setUser({
@@ -110,6 +121,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (initialSession?.user) {
             localStorage.setItem('quicksuite_logged_in', 'true');
             await fetchProfile(initialSession.user.id);
+          } else {
+            localStorage.removeItem('quicksuite_logged_in');
           }
         }
       } catch (err) {
@@ -141,7 +154,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [isDemo, isConfigured, fetchProfile]);
 
   const signIn = async (email: string, pass: string) => {
-    if (isDemo || !isConfigured) {
+    if (!isConfigured) {
+      setIsDemo(true);
       localStorage.setItem('quicksuite_logged_in', 'true');
       setUser({
         id: mockProfile.id,
@@ -154,11 +168,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { error: null };
     }
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password: pass });
-    if (!error) {
-      localStorage.setItem('quicksuite_logged_in', 'true');
+    setIsDemo(false);
+    localStorage.removeItem('quicksuite_force_demo');
+
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
+    if (error) {
+      return { error: error as Error | null };
     }
-    return { error: error as Error | null };
+
+    if (data.user) {
+      setUser(data.user);
+      setSession(data.session);
+      localStorage.setItem('quicksuite_logged_in', 'true');
+      await fetchProfile(data.user.id);
+    }
+    return { error: null };
   };
 
   const signUp = async (
@@ -166,7 +190,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     pass: string,
     metadata: { full_name: string; program: string; year: string }
   ) => {
-    if (isDemo) {
+    if (!isConfigured) {
+      setIsDemo(true);
       const updatedProf: StudentProfile = {
         id: 'student-' + Date.now(),
         full_name: metadata.full_name,
@@ -176,10 +201,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
       setProfile(updatedProf);
       localStorage.setItem('quicksuite_profile', JSON.stringify(updatedProf));
+      localStorage.setItem('quicksuite_logged_in', 'true');
+      setUser({
+        id: updatedProf.id,
+        email,
+        app_metadata: {},
+        user_metadata: { full_name: metadata.full_name },
+        aud: 'authenticated',
+        created_at: new Date().toISOString(),
+      } as unknown as User);
       return { error: null };
     }
 
-    const { error } = await supabase.auth.signUp({
+    setIsDemo(false);
+    localStorage.removeItem('quicksuite_force_demo');
+
+    const { data, error } = await supabase.auth.signUp({
       email,
       password: pass,
       options: {
@@ -191,22 +228,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       },
     });
 
-    return { error: error as Error | null };
+    if (error) {
+      return { error: error as Error | null };
+    }
+
+    if (data.user) {
+      const newProfile: StudentProfile = {
+        id: data.user.id,
+        full_name: metadata.full_name,
+        program: metadata.program,
+        year: metadata.year as any,
+        target_study_hours_week: 25,
+      };
+      try {
+        await supabase.from('profiles').upsert([newProfile]);
+      } catch (profileErr) {
+        console.warn('Could not upsert profile immediately:', profileErr);
+      }
+      setProfile(newProfile);
+      localStorage.setItem('quicksuite_profile', JSON.stringify(newProfile));
+
+      if (data.session) {
+        setSession(data.session);
+        setUser(data.user);
+        localStorage.setItem('quicksuite_logged_in', 'true');
+      }
+    }
+
+    return { error: null };
   };
 
   const signOut = async () => {
     localStorage.removeItem('quicksuite_logged_in');
-    if (isDemo || !isConfigured) {
-      setUser(null);
-      return;
-    }
-    await supabase.auth.signOut();
+    localStorage.removeItem('quicksuite_force_demo');
     setUser(null);
     setSession(null);
+    setProfile(null);
+    if (isConfigured) {
+      await supabase.auth.signOut();
+    }
   };
 
   const resetPassword = async (email: string) => {
-    if (isDemo) {
+    if (!isConfigured || isDemo) {
       return { error: null };
     }
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -216,7 +280,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const deleteAccount = async () => {
-    if (isDemo) {
+    if (isDemo || !isConfigured) {
       localStorage.clear();
       window.location.reload();
       return { error: null };
@@ -247,7 +311,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const toggleDemoMode = (enabled: boolean) => {
     setIsDemo(enabled);
-    localStorage.setItem('quicksuite_force_demo', enabled ? 'true' : 'false');
+    if (enabled) {
+      localStorage.setItem('quicksuite_force_demo', 'true');
+      localStorage.setItem('quicksuite_logged_in', 'true');
+      setUser({
+        id: mockProfile.id,
+        email: 'alex.river@university.edu',
+        app_metadata: {},
+        user_metadata: { full_name: mockProfile.full_name },
+        aud: 'authenticated',
+        created_at: new Date().toISOString(),
+      } as unknown as User);
+      setProfile(mockProfile);
+    } else {
+      localStorage.removeItem('quicksuite_force_demo');
+      localStorage.removeItem('quicksuite_logged_in');
+      setUser(null);
+      setSession(null);
+      setProfile(null);
+    }
   };
 
   return (

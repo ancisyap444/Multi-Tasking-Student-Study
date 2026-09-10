@@ -63,9 +63,10 @@ export function useTasks(subjects: Subject[] = []) {
         return item;
       }
 
+      const { subject: _s, ...cleanTask } = newTask as any;
       const { data, error } = await supabase
         .from('tasks')
-        .insert([{ ...newTask, user_id: user.id }])
+        .insert([{ ...cleanTask, user_id: user.id }])
         .select('*, subject:subjects(*)')
         .single();
 
@@ -108,9 +109,10 @@ export function useTasks(subjects: Subject[] = []) {
         return { id, updates };
       }
 
+      const { subject: _s, ...cleanUpdates } = updates as any;
       const { error } = await supabase
         .from('tasks')
-        .update(updates)
+        .update(cleanUpdates)
         .eq('id', id);
 
       if (error) throw error;
