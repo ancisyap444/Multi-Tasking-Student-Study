@@ -15,6 +15,7 @@ interface AuthContextType {
   signUp: (email: string, pass: string, metadata: { full_name: string; program: string; year: string }) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
+  updatePassword: (newPassword: string) => Promise<{ error: Error | null }>;
   deleteAccount: () => Promise<{ error: Error | null }>;
   updateProfile: (updates: Partial<StudentProfile>) => Promise<void>;
   toggleDemoMode: (enabled: boolean) => void;
@@ -279,6 +280,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { error: error as Error | null };
   };
 
+  const updatePassword = async (newPassword: string) => {
+    if (!isConfigured || isDemo) {
+      return { error: null };
+    }
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+    return { error: error as Error | null };
+  };
+
   const deleteAccount = async () => {
     if (isDemo || !isConfigured) {
       localStorage.clear();
@@ -345,6 +356,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         signUp,
         signOut,
         resetPassword,
+        updatePassword,
         deleteAccount,
         updateProfile,
         toggleDemoMode,

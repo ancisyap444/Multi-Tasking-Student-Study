@@ -11,6 +11,12 @@ import {
   Camera,
   RotateCcw,
   Link as LinkIcon,
+  KeyRound,
+  Lock,
+  Eye,
+  EyeOff,
+  Mail,
+  AlertCircle,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
@@ -41,7 +47,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onClose,
   initialTab = 'appearance',
 }) => {
-  const { profile, updateProfile, deleteAccount } = useAuth();
+  const { user, profile, updateProfile, deleteAccount, resetPassword, updatePassword } = useAuth();
   const { mode, setMode, accent, setAccent } = useTheme();
 
   const [activeTab, setActiveTab] = useState<SettingsTabKey>(initialTab);
@@ -56,6 +62,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Password reset state
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [isSendingResetEmail, setIsSendingResetEmail] = useState(false);
+  const [passwordStatus, setPasswordStatus] = useState<'success' | 'error' | null>(null);
+  const [passwordMessage, setPasswordMessage] = useState('');
 
   useEffect(() => {
     if (isOpen) {
@@ -111,6 +127,71 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const handleDeleteAccount = async () => {
     await deleteAccount();
     onClose();
+  };
+
+  const handleDirectResetPassword = async () => {
+    setPasswordMessage('');
+    setPasswordStatus(null);
+
+    if (!newPassword || newPassword.length < 6) {
+      setPasswordStatus('error');
+      setPasswordMessage('New password must be at least 6 characters long.');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordStatus('error');
+      setPasswordMessage('Passwords do not match. Please ensure both passwords match.');
+      return;
+    }
+
+    setIsUpdatingPassword(true);
+    try {
+      const { error } = await updatePassword(newPassword);
+      if (error) {
+        setPasswordStatus('error');
+        setPasswordMessage(error.message || 'Failed to update password.');
+      } else {
+        setPasswordStatus('success');
+        setPasswordMessage('Password updated successfully! Your new password is now active.');
+        setNewPassword('');
+        setConfirmPassword('');
+      }
+    } catch (err: any) {
+      setPasswordStatus('error');
+      setPasswordMessage(err.message || 'An unexpected error occurred while updating your password.');
+    } finally {
+      setIsUpdatingPassword(false);
+    }
+  };
+
+  const handleSendResetEmail = async () => {
+    setPasswordMessage('');
+    setPasswordStatus(null);
+    const targetEmail = user?.email;
+
+    if (!targetEmail) {
+      setPasswordStatus('error');
+      setPasswordMessage('No email address found for your account.');
+      return;
+    }
+
+    setIsSendingResetEmail(true);
+    try {
+      const { error } = await resetPassword(targetEmail);
+      if (error) {
+        setPasswordStatus('error');
+        setPasswordMessage(error.message || 'Failed to send reset link.');
+      } else {
+        setPasswordStatus('success');
+        setPasswordMessage(`Password reset link sent to ${targetEmail}! Please check your inbox.`);
+      }
+    } catch (err: any) {
+      setPasswordStatus('error');
+      setPasswordMessage(err.message || 'An unexpected error occurred while sending reset email.');
+    } finally {
+      setIsSendingResetEmail(false);
+    }
   };
 
   const years: AcademicYear[] = ['Freshman', 'Sophomore', 'Junior', 'Senior', 'Graduate'];
@@ -447,6 +528,118 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       <span>Save Changes</span>
                     )}
                   </button>
+                </div>
+
+                {/* Reset Password & Security Section */}
+                <div className="mt-8 rounded-2xl border border-slate-200 bg-slate-50/70 p-5 dark:border-slate-800 dark:bg-slate-900/50 space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-200/70 dark:border-slate-800/70">
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+                        <KeyRound className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-slate-900 dark:text-white">Reset Password & Security</h4>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          Change your login password or request an email reset link
+                        </p>
+                      </div>
+                    </div>
+                    {user?.email && (
+                      <span className="self-start sm:self-auto rounded-lg bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 border border-slate-200 shadow-2xs dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300">
+                        {user.email}
+                      </span>
+                    )}
+                  </div>
+
+                  {passwordMessage && (
+                    <div
+                      className={cn(
+                        'flex items-start gap-2.5 rounded-xl p-3 text-xs transition-all',
+                        passwordStatus === 'success'
+                          ? 'bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900'
+                          : 'bg-rose-50 text-rose-800 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900'
+                      )}
+                    >
+                      {passwordStatus === 'success' ? (
+                        <Check className="h-4 w-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+                      ) : (
+                        <AlertCircle className="h-4 w-4 text-rose-600 flex-shrink-0 mt-0.5" />
+                      )}
+                      <span className="font-medium">{passwordMessage}</span>
+                    </div>
+                  )}
+
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                          New Password
+                        </label>
+                        <div className="relative">
+                          <input
+                            type={showPassword ? 'text' : 'password'}
+                            placeholder="At least 6 characters"
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 pr-9 text-xs text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword((prev) => !prev)}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                            title={showPassword ? 'Hide password' : 'Show password'}
+                          >
+                            {showPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                          Confirm New Password
+                        </label>
+                        <div className="relative">
+                          <input
+                            type={showConfirmPassword ? 'text' : 'password'}
+                            placeholder="Confirm new password"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 pr-9 text-xs text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowConfirmPassword((prev) => !prev)}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                            title={showConfirmPassword ? 'Hide password' : 'Show password'}
+                          >
+                            {showConfirmPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-between gap-2.5 pt-2">
+                      <button
+                        type="button"
+                        disabled={isUpdatingPassword || !newPassword}
+                        onClick={handleDirectResetPassword}
+                        className="flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-blue-700 disabled:opacity-40"
+                      >
+                        <Lock className="h-3.5 w-3.5" />
+                        <span>{isUpdatingPassword ? 'Updating...' : 'Update Password'}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={isSendingResetEmail}
+                        onClick={handleSendResetEmail}
+                        className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-750"
+                      >
+                        <Mail className="h-3.5 w-3.5 text-blue-500" />
+                        <span>{isSendingResetEmail ? 'Sending Link...' : 'Send Reset Link via Email'}</span>
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="mt-8 rounded-xl border border-rose-200 bg-rose-50/50 p-4 dark:border-rose-900/50 dark:bg-rose-950/20">
