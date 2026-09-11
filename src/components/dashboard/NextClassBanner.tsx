@@ -44,21 +44,21 @@ export const NextClassBanner: React.FC<NextClassBannerProps> = ({
 
   if (!imminentEvent) {
     return (
-      <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 p-6 text-white shadow-card">
-        <div className="flex items-center justify-between">
+      <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 p-4 sm:p-6 text-white shadow-card">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-semibold backdrop-blur-xs">
               <CheckCircle2 className="h-3.5 w-3.5" />
               All Clear for Today
             </span>
-            <h2 className="text-xl font-bold">No Upcoming Classes Scheduled</h2>
+            <h2 className="text-lg sm:text-xl font-bold">No Upcoming Classes Scheduled</h2>
             <p className="text-xs text-blue-100 max-w-md">
               You are all caught up! Use your free block to review assignment problem sets or relax.
             </p>
           </div>
           <button
             onClick={onOpenCalendar}
-            className="flex items-center gap-1.5 rounded-xl bg-white px-4 py-2 text-xs font-semibold text-blue-700 shadow-sm transition hover:bg-blue-50"
+            className="self-start sm:self-auto flex items-center gap-1.5 rounded-xl bg-white px-4 py-2 text-xs font-semibold text-blue-700 shadow-sm transition hover:bg-blue-50"
           >
             <span>View Full Calendar</span>
             <ArrowRight className="h-4 w-4" />
@@ -74,7 +74,7 @@ export const NextClassBanner: React.FC<NextClassBannerProps> = ({
   const minutesUntil = differenceInMinutes(start, now);
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-blue-200/80 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 p-6 text-white shadow-card dark:border-blue-900/40">
+    <div className="relative overflow-hidden rounded-2xl border border-blue-200/80 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 p-4 sm:p-6 text-white shadow-card dark:border-blue-900/40">
       <div className="pointer-events-none absolute -right-12 -top-12 h-64 w-64 rounded-full bg-white/10 blur-2xl" />
 
       <div className="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -91,7 +91,7 @@ export const NextClassBanner: React.FC<NextClassBannerProps> = ({
             )}
           </div>
 
-          <h2 className="text-2xl font-extrabold tracking-tight">
+          <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight">
             {imminentEvent.title}
           </h2>
 

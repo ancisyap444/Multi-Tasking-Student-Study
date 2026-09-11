@@ -67,7 +67,7 @@ export const TaskKanban: React.FC<TaskKanbanProps> = ({
 
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 p-3 sm:p-6">
         {COLUMNS.map((col) => {
           const colTasks = tasks.filter((t) => t.status === col.id);
 

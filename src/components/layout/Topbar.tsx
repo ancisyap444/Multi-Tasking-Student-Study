@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
+  Menu,
   Search,
   Plus,
   Bell,
@@ -30,6 +31,7 @@ export interface TopbarProps {
   tasks?: TaskItem[];
   events?: CalendarEvent[];
   onNavigate?: (tab: NavTab) => void;
+  onToggleMobileMenu?: () => void;
 }
 
 interface AlertItem {
@@ -51,6 +53,7 @@ export const Topbar: React.FC<TopbarProps> = ({
   tasks = [],
   events = [],
   onNavigate,
+  onToggleMobileMenu,
 }) => {
   const { profile, signOut } = useAuth();
   const { isDark, setMode } = useTheme();
@@ -187,28 +190,45 @@ export const Topbar: React.FC<TopbarProps> = ({
   }, []);
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-slate-200/80 bg-white/80 px-6 backdrop-blur-md dark:border-slate-800 dark:bg-[#0F172A]/80">
-      <div className="flex items-center gap-4">
+    <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-slate-200/80 bg-white/80 px-3.5 sm:px-6 backdrop-blur-md dark:border-slate-800 dark:bg-[#0F172A]/80">
+      <div className="flex items-center gap-2 sm:gap-4">
+        {onToggleMobileMenu && (
+          <button
+            onClick={onToggleMobileMenu}
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50 md:hidden dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+            title="Open navigation menu"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+        )}
+
+        {/* Desktop / tablet search button */}
         <button
           onClick={onOpenSearch}
-          className="flex h-10 w-64 items-center justify-between rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 text-xs text-slate-500 shadow-2xs transition hover:border-slate-300 hover:bg-slate-100/70 dark:border-slate-700 dark:bg-slate-850 dark:text-slate-400 dark:hover:border-slate-600"
+          className="hidden sm:flex h-10 w-44 md:w-64 items-center justify-between rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 text-xs text-slate-500 shadow-2xs transition hover:border-slate-300 hover:bg-slate-100/70 dark:border-slate-700 dark:bg-slate-850 dark:text-slate-400 dark:hover:border-slate-600"
         >
-          <div className="flex items-center gap-2">
-            <Search className="h-4 w-4" />
-            <span>Search subjects, tasks, or notes...</span>
+          <div className="flex items-center gap-2 truncate">
+            <Search className="h-4 w-4 flex-shrink-0" />
+            <span className="truncate">Search subjects, tasks...</span>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="hidden md:flex items-center gap-1 flex-shrink-0">
             <kbd className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-400 shadow-2xs dark:border-slate-700 dark:bg-slate-800">
               ctrl+k
             </kbd>
-            <kbd className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-400 shadow-2xs dark:border-slate-700 dark:bg-slate-800">
-              ⌘1
-            </kbd>
           </div>
+        </button>
+
+        {/* Mobile search icon button */}
+        <button
+          onClick={onOpenSearch}
+          className="flex sm:hidden h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+          title="Search subjects, tasks, or notes"
+        >
+          <Search className="h-4 w-4" />
         </button>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3">
         <button
           onClick={onGoToDashboard}
           className="hidden md:flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50/60 px-3 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-100/60 transition dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-300"
@@ -220,7 +240,7 @@ export const Topbar: React.FC<TopbarProps> = ({
 
         <button
           onClick={onOpenCreateEvent}
-          className="flex items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-blue-700 active:scale-95"
+          className="flex items-center gap-1.5 rounded-xl bg-blue-600 px-3 sm:px-3.5 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-blue-700 active:scale-95"
         >
           <Plus className="h-4 w-4" />
           <span className="hidden sm:inline">Create</span>
@@ -250,7 +270,7 @@ export const Topbar: React.FC<TopbarProps> = ({
           </button>
 
           {notificationsOpen && (
-            <div className="absolute right-0 mt-2 w-80 sm:w-96 origin-top-right rounded-2xl border border-slate-200 bg-white p-3 shadow-2xl z-50 dark:border-slate-800 dark:bg-[#0F172A] animate-in fade-in zoom-in-95 duration-150">
+            <div className="absolute right-0 mt-2 w-[calc(100vw-24px)] max-w-sm sm:w-96 origin-top-right rounded-2xl border border-slate-200 bg-white p-3 shadow-2xl z-50 dark:border-slate-800 dark:bg-[#0F172A] animate-in fade-in zoom-in-95 duration-150">
               <div className="flex items-center justify-between border-b border-slate-100 pb-2.5 px-1 dark:border-slate-800">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold text-slate-900 dark:text-white">
@@ -350,7 +370,7 @@ export const Topbar: React.FC<TopbarProps> = ({
           </button>
 
           {profileDropdownOpen && (
-            <div className="absolute right-0 mt-2 w-64 origin-top-right rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl transition-all z-50 dark:border-slate-800 dark:bg-[#0F172A]">
+            <div className="absolute right-0 mt-2 w-64 max-w-[calc(100vw-24px)] origin-top-right rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl transition-all z-50 dark:border-slate-800 dark:bg-[#0F172A]">
               <div className="border-b border-slate-100 p-2 dark:border-slate-800">
                 <p className="text-sm font-semibold text-slate-900 dark:text-white">
                   {profile?.full_name || 'Alex River'}

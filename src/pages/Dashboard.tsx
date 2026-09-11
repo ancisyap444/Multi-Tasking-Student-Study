@@ -45,7 +45,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [refreshKey, setRefreshKey] = useState(0);
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 space-y-6">
+    <div className="flex-1 overflow-y-auto p-3.5 sm:p-6 space-y-4 sm:space-y-6">
       <NextClassBanner
         events={events}
         onOpenCalendar={() => onNavigate('calendar')}
@@ -57,7 +57,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         onAutoSchedule={onOpenAutoSchedule}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         <TodayTasksList
           tasks={tasks}
           onToggleTask={onToggleTask}
@@ -67,8 +67,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <StudyLoadProgressBar completedHours={completedStudyHours} />
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-2xs dark:border-slate-800 dark:bg-[#0F172A]">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-2xs dark:border-slate-800 dark:bg-[#0F172A]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
           <div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-white">
               Enrolled Course Roster & Progress ({subjects.length})
@@ -79,7 +79,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
           <button
             onClick={onOpenAddSubject}
-            className="text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400"
+            className="self-start sm:self-auto text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400"
           >
             + Enroll Course
           </button>

@@ -54,6 +54,7 @@ export const MainLayout: React.FC = () => {
 
   const [currentTab, setCurrentTab] = useState<NavTab>('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [selectedSubjectFilter, setSelectedSubjectFilter] = useState<string | null>(null);
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -236,7 +237,10 @@ export const MainLayout: React.FC = () => {
     <div className="flex h-screen w-full overflow-hidden bg-[#F8FAFC] dark:bg-[#0B0F19]">
       <Sidebar
         currentTab={currentTab}
-        onSelectTab={setCurrentTab}
+        onSelectTab={(tab) => {
+          setCurrentTab(tab);
+          setIsMobileNavOpen(false);
+        }}
         subjects={subjects}
         selectedSubjectFilter={selectedSubjectFilter}
         onSelectSubjectFilter={setSelectedSubjectFilter}
@@ -247,6 +251,8 @@ export const MainLayout: React.FC = () => {
         onToggleCollapsed={() => setSidebarCollapsed(!sidebarCollapsed)}
         activeTaskCount={taskUrgency.total}
         taskUrgency={taskUrgency}
+        isMobileOpen={isMobileNavOpen}
+        onCloseMobile={() => setIsMobileNavOpen(false)}
       />
 
       <div className="flex flex-1 flex-col overflow-hidden">
@@ -257,7 +263,11 @@ export const MainLayout: React.FC = () => {
           onGoToDashboard={() => setCurrentTab('dashboard')}
           tasks={tasks}
           events={events}
-          onNavigate={setCurrentTab}
+          onNavigate={(tab) => {
+            setCurrentTab(tab);
+            setIsMobileNavOpen(false);
+          }}
+          onToggleMobileMenu={() => setIsMobileNavOpen((prev) => !prev)}
         />
 
         <main className="flex flex-1 overflow-hidden">
